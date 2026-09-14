@@ -1,5 +1,16 @@
 [
   {
+    "id": "FAC00",
+    "name": "Prof. Akshay",
+    "subject": "Physics",
+    "department": "Department of Physics (JEE & NEET)",
+    "phone": "919848012345",
+    "email": "akshay.physics@excellencia.edu.in",
+    "designation": "Senior Faculty - Physics",
+    "availableHours": "4:00 PM - 8:30 PM",
+    "bio": "Specialist in JEE & NEET Physics, Mechanics, Electrodynamics & Conceptual Problem Solving."
+  },
+  {
     "id": "FAC01",
     "name": "Prof. K. Venkatesh Rao",
     "subject": "Mathematics",
