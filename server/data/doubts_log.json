@@ -1,5 +1,16 @@
 [
   {
+    "id": "doubt-1789368613738",
+    "studentId": "EXM101",
+    "studentName": "Aarav Sharma",
+    "facultyId": "FAC01",
+    "facultyName": "Prof. K. Venkatesh Rao",
+    "subject": "Mathematics",
+    "topic": "Definite Integrals",
+    "question": "How do we use Leibniz rule when the upper limit is x^2?",
+    "timestamp": "2026-09-14T06:50:13.738Z"
+  },
+  {
     "id": "doubt-1789363121270",
     "studentId": "EXM101",
     "studentName": "Aarav Sharma",

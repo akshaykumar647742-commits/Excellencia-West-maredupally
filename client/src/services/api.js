@@ -25,6 +25,14 @@ export const api = {
     return res.json();
   },
 
+  bulkUploadStudents: async (formData) => {
+    const res = await fetch(`${API_BASE}/students/bulk-upload`, {
+      method: 'POST',
+      body: formData
+    });
+    return res.json();
+  },
+
   // Faculty
   loginFaculty: async (passcode, facultyId) => {
     const res = await fetch(`${API_BASE}/faculty/login`, {

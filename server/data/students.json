@@ -43,5 +43,32 @@
     "phone": "+91 98765 43214",
     "rollNo": "2024-11-30",
     "joinDate": "2024-06-15"
+  },
+  {
+    "id": "925001",
+    "name": "Rahul Reddy",
+    "classBatch": "Class 12 - Senior Sankalp (MPC)",
+    "stream": "MPC",
+    "phone": "9848012345",
+    "rollNo": "925001",
+    "joinDate": "2026-09-14"
+  },
+  {
+    "id": "925002",
+    "name": "Ananya Rao",
+    "classBatch": "Class 11 - NEET Medical (BiPC)",
+    "stream": "BiPC",
+    "phone": "9849123456",
+    "rollNo": "925002",
+    "joinDate": "2026-09-14"
+  },
+  {
+    "id": "925003",
+    "name": "K. Vigneshwaran",
+    "classBatch": "Class 12 - JEE Advanced (MPC)",
+    "stream": "MPC",
+    "phone": "9989608928",
+    "rollNo": "925003",
+    "joinDate": "2026-09-14"
   }
 ]

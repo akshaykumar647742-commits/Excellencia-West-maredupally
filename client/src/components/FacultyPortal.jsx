@@ -18,7 +18,9 @@ import {
   KeyRound,
   ShieldCheck,
   LogOut,
-  Sparkles
+  Sparkles,
+  FileSpreadsheet,
+  Download
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -112,6 +114,47 @@ export default function FacultyPortal({
     stream: 'MPC'
   });
   const [studentMsg, setStudentMsg] = useState('');
+  const [studentSearchQuery, setStudentSearchQuery] = useState('');
+
+  // Excel Bulk Upload state
+  const [excelFile, setExcelFile] = useState(null);
+  const [excelUploading, setExcelUploading] = useState(false);
+  const [excelMsg, setExcelMsg] = useState('');
+  const [excelError, setExcelError] = useState('');
+
+  const handleBulkExcelUpload = async (e) => {
+    e.preventDefault();
+    if (!excelFile) {
+      setExcelError('Please select an Excel (.xlsx, .xls) or CSV file');
+      return;
+    }
+
+    setExcelUploading(true);
+    setExcelError('');
+    setExcelMsg('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', excelFile);
+
+      const res = await api.bulkUploadStudents(formData);
+      if (res.success) {
+        setExcelMsg(res.message);
+        setExcelFile(null);
+        // Reset file input
+        const fileInput = document.getElementById('excelFileInput');
+        if (fileInput) fileInput.value = '';
+        onStudentAdded();
+      } else {
+        setExcelError(res.message || 'Failed to process Excel file');
+      }
+    } catch (err) {
+      setExcelError('Error uploading Excel file: ' + err.message);
+    } finally {
+      setExcelUploading(false);
+    }
+  };
+
 
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
@@ -860,106 +903,220 @@ export default function FacultyPortal({
       {/* TAB 4: STUDENT DIRECTORY */}
       {activeTab === 'students' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left 2 cols: Student Table & Search */}
           <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
-            <h3 className="text-base font-bold text-slate-900">
-              Registered Excellencia Student IDs ({students.length})
-            </h3>
-            <p className="text-xs text-slate-500">
-              Students can log into the portal instantly using any of these Student ID numbers.
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Registered Excellencia Student IDs ({students.length})
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Students can log into the portal instantly using their ID number.
+                </p>
+              </div>
 
-            <div className="overflow-x-auto">
+              {/* Instant Search Bar */}
+              <div className="w-full sm:w-64">
+                <input
+                  type="text"
+                  placeholder="Search by ID, Name or Phone..."
+                  value={studentSearchQuery}
+                  onChange={(e) => setStudentSearchQuery(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="overflow-x-auto max-h-[550px] overflow-y-auto">
               <table className="w-full text-left text-xs border-collapse">
-                <thead>
+                <thead className="sticky top-0 bg-slate-50 shadow-2xs">
                   <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px]">
                     <th className="py-2.5 px-3">Student ID</th>
                     <th className="py-2.5 px-3">Student Name</th>
                     <th className="py-2.5 px-3">Batch & Stream</th>
+                    <th className="py-2.5 px-3">Parent Phone</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {students.map(s => (
-                    <tr key={s.id} className="hover:bg-slate-50">
-                      <td className="py-2.5 px-3 font-mono font-bold text-blue-900">{s.id}</td>
-                      <td className="py-2.5 px-3 font-semibold text-slate-800">{s.name}</td>
-                      <td className="py-2.5 px-3 text-slate-600">
-                        {s.classBatch} • <span className="text-slate-500">{s.stream}</span>
-                      </td>
-                    </tr>
-                  ))}
+                  {students
+                    .filter(s => 
+                      !studentSearchQuery ||
+                      s.id.toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
+                      s.name.toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
+                      (s.phone && s.phone.includes(studentSearchQuery))
+                    )
+                    .map(s => (
+                      <tr key={s.id} className="hover:bg-slate-50">
+                        <td className="py-2.5 px-3 font-mono font-bold text-blue-900">{s.id}</td>
+                        <td className="py-2.5 px-3 font-semibold text-slate-800">{s.name}</td>
+                        <td className="py-2.5 px-3 text-slate-600">
+                          {s.classBatch} • <span className="text-slate-500">{s.stream}</span>
+                        </td>
+                        <td className="py-2.5 px-3 font-mono text-slate-500 text-[11px]">
+                          {s.phone || '—'}
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
           </div>
 
-          {/* Quick Add Student (Master Admin Only - Prof. Akshay) */}
+          {/* Right col: Admin Controls (Excel Bulk Import + Manual Enrollment) */}
           {isMasterAdmin ? (
-            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-slate-900">Add New Student ID</h3>
-                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px] uppercase border border-amber-300">
-                  Admin Only
-                </span>
+            <div className="space-y-6">
+              {/* CARD 1: EXCEL BULK IMPORT */}
+              <div className="bg-white rounded-3xl p-6 border-2 border-emerald-300 shadow-md space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                      <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900">Upload Excel Sheet</h3>
+                      <p className="text-[11px] text-slate-500">Import student roster (.xlsx, .xls, .csv)</p>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] uppercase border border-emerald-200">
+                    Bulk Excel
+                  </span>
+                </div>
+
+                <div className="text-[11px] text-slate-600 bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-1.5">
+                  <p className="font-semibold text-slate-800">Auto-Detects Excel Columns:</p>
+                  <p className="text-slate-500">
+                    Works with <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-700 font-mono">Student ID / Roll No</code>, <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-700 font-mono">Student Name</code>, <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-700 font-mono">Class / Batch</code>, <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-700 font-mono">Phone</code>.
+                  </p>
+                  <a
+                    href="/api/students/sample-template"
+                    download="Excellencia_Student_Upload_Template.xlsx"
+                    className="inline-flex items-center gap-1 text-blue-700 font-bold hover:underline pt-1"
+                  >
+                    <Download className="w-3 h-3" />
+                    <span>Download Sample Excel Template</span>
+                  </a>
+                </div>
+
+                {excelMsg && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <span>{excelMsg}</span>
+                  </div>
+                )}
+
+                {excelError && (
+                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-semibold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                    <span>{excelError}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleBulkExcelUpload} className="space-y-3">
+                  <div className="border-2 border-dashed border-slate-300 rounded-2xl p-4 text-center bg-slate-50 hover:bg-slate-100 transition-colors">
+                    <input
+                      type="file"
+                      id="excelFileInput"
+                      accept=".xlsx, .xls, .csv"
+                      onChange={(e) => setExcelFile(e.target.files[0])}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="excelFileInput"
+                      className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-2xs"
+                    >
+                      <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                      <span>{excelFile ? 'Change File' : 'Choose Excel (.xlsx / .csv)'}</span>
+                    </label>
+                    {excelFile ? (
+                      <p className="mt-2 text-xs font-bold text-emerald-700 truncate">
+                        ✓ {excelFile.name} ({(excelFile.size / 1024).toFixed(1)} KB)
+                      </p>
+                    ) : (
+                      <p className="mt-1.5 text-[11px] text-slate-400">
+                        Choose college Excel sheet from your device
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={excelUploading || !excelFile}
+                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-xs transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>{excelUploading ? 'Parsing & Importing Students...' : 'Upload & Enroll All Students'}</span>
+                  </button>
+                </form>
               </div>
-              {studentMsg && (
-                <p className="text-xs p-2.5 bg-blue-50 text-blue-800 rounded-xl font-medium border border-blue-200">
-                  {studentMsg}
-                </p>
-              )}
-              <form onSubmit={handleAddStudent} className="space-y-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Student ID *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. EXM106"
-                    value={newStudent.id}
-                    onChange={(e) => setNewStudent({ ...newStudent, id: e.target.value.toUpperCase() })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono uppercase"
-                    required
-                  />
-                </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Student Full Name *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Rohan V"
-                    value={newStudent.name}
-                    onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                    required
-                  />
+              {/* CARD 2: MANUAL SINGLE STUDENT ENROLLMENT */}
+              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-slate-900">Add Individual Student</h3>
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold text-[10px] uppercase">
+                    Manual
+                  </span>
                 </div>
+                {studentMsg && (
+                  <p className="text-xs p-2.5 bg-blue-50 text-blue-800 rounded-xl font-medium border border-blue-200">
+                    {studentMsg}
+                  </p>
+                )}
+                <form onSubmit={handleAddStudent} className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Student ID / Roll No *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 925001 or EXM106"
+                      value={newStudent.id}
+                      onChange={(e) => setNewStudent({ ...newStudent, id: e.target.value.toUpperCase() })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono uppercase"
+                      required
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Class / Batch</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Class 12 - JEE Advanced"
-                    value={newStudent.classBatch}
-                    onChange={(e) => setNewStudent({ ...newStudent, classBatch: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Student Full Name *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Rahul Sharma"
+                      value={newStudent.name}
+                      onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                      required
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Stream</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. MPC"
-                    value={newStudent.stream}
-                    onChange={(e) => setNewStudent({ ...newStudent, stream: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Class / Batch</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Class 12 - Senior Sankalp (MPC)"
+                      value={newStudent.classBatch}
+                      onChange={(e) => setNewStudent({ ...newStudent, classBatch: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                    />
+                  </div>
 
-                <button
-                  type="submit"
-                  className="w-full py-2.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow-xs"
-                >
-                  Register Student ID
-                </button>
-              </form>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Stream</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. MPC or BiPC"
+                      value={newStudent.stream}
+                      onChange={(e) => setNewStudent({ ...newStudent, stream: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow-xs"
+                  >
+                    Register Single Student
+                  </button>
+                </form>
+              </div>
             </div>
           ) : (
             <div className="bg-gradient-to-br from-slate-50 to-amber-50/50 rounded-3xl p-6 border border-amber-200 shadow-sm text-center space-y-3 self-start">

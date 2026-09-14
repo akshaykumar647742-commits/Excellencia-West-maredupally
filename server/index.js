@@ -3,6 +3,7 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const XLSX = require('xlsx');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -144,6 +145,137 @@ app.post('/api/students', (req, res) => {
 
   res.status(201).json({ success: true, student: newStudent });
 });
+
+// Download sample Excel template for bulk student upload
+app.get('/api/students/sample-template', (req, res) => {
+  const sampleData = [
+    {
+      'Student ID': '925001',
+      'Student Name': 'Rahul Reddy',
+      'Class Batch': 'Class 12 - Senior Sankalp (MPC)',
+      'Stream': 'MPC',
+      'Parent Phone': '9848012345'
+    },
+    {
+      'Student ID': '925002',
+      'Student Name': 'Ananya Rao',
+      'Class Batch': 'Class 11 - NEET Medical (BiPC)',
+      'Stream': 'BiPC',
+      'Parent Phone': '9849123456'
+    },
+    {
+      'Student ID': '925003',
+      'Student Name': 'K. Vigneshwaran',
+      'Class Batch': 'Class 12 - JEE Advanced (MPC)',
+      'Stream': 'MPC',
+      'Parent Phone': '9989608928'
+    }
+  ];
+
+  const ws = XLSX.utils.json_to_sheet(sampleData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Students_Template');
+  const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+  res.setHeader('Content-Disposition', 'attachment; filename="Excellencia_Student_Upload_Template.xlsx"');
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.send(buffer);
+});
+
+// Bulk Upload Students via Excel (.xlsx, .xls) or CSV
+app.post('/api/students/bulk-upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'Please upload an Excel (.xlsx, .xls) or CSV file' });
+  }
+
+  try {
+    const workbook = XLSX.readFile(req.file.path);
+    const sheetName = workbook.SheetNames[0];
+    const rawRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
+
+    if (!rawRows || rawRows.length === 0) {
+      return res.status(400).json({ success: false, message: 'The uploaded sheet contains no data rows.' });
+    }
+
+    const students = readJSON('students.json', []);
+    let addedCount = 0;
+    let updatedCount = 0;
+    const importedList = [];
+
+    rawRows.forEach((row) => {
+      const getVal = (possibleKeys) => {
+        for (const k of Object.keys(row)) {
+          const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+          for (const pk of possibleKeys) {
+            if (cleanK === pk || cleanK.includes(pk)) {
+              return String(row[k]).trim();
+            }
+          }
+        }
+        return '';
+      };
+
+      const id = getVal(['studentid', 'idno', 'rollno', 'id', 'roll', 'htno', 'hallticket']);
+      const name = getVal(['studentname', 'fullname', 'name', 'candidate']);
+      const classBatch = getVal(['classbatch', 'class', 'batch', 'section', 'course']) || 'Class 12 - Senior Sankalp (MPC)';
+      const stream = getVal(['stream', 'group', 'branch']) || 'MPC';
+      const phone = getVal(['parentphone', 'phone', 'mobile', 'contact', 'cell', 'fathermobile', 'mothermobile']) || '';
+
+      if (id && name) {
+        const cleanId = id.toUpperCase();
+        const existingIdx = students.findIndex(s => s.id.toUpperCase() === cleanId);
+        const studentObj = {
+          id: cleanId,
+          name,
+          classBatch,
+          stream,
+          phone,
+          rollNo: cleanId,
+          joinDate: new Date().toISOString().split('T')[0]
+        };
+
+        if (existingIdx >= 0) {
+          students[existingIdx] = { ...students[existingIdx], ...studentObj };
+          updatedCount++;
+        } else {
+          students.push(studentObj);
+          addedCount++;
+        }
+        importedList.push(studentObj);
+      }
+    });
+
+    writeJSON('students.json', students);
+
+    // Delete temp file
+    try {
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+    } catch (e) {
+      console.warn('Could not delete temp uploaded excel file:', e);
+    }
+
+    if (importedList.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Could not find columns like "Student ID" and "Student Name" in your sheet. Please check the template.'
+      });
+    }
+
+    return res.json({
+      success: true,
+      count: importedList.length,
+      addedCount,
+      updatedCount,
+      message: `Successfully processed ${importedList.length} students (${addedCount} newly enrolled, ${updatedCount} updated)!`
+    });
+  } catch (err) {
+    console.error('Error processing Excel file:', err);
+    res.status(500).json({ success: false, message: 'Failed to parse Excel file: ' + err.message });
+  }
+});
+
 
 /* ============================================================
    FACULTY ROUTES

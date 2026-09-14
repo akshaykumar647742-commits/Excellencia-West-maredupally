@@ -133,6 +133,33 @@ def run_tests():
         assert err.code == 401
         print("✓ Unauthorized teacher access correctly blocked (HTTP 401).")
 
+    print("\n--- 9. Testing Excel Bulk Student Upload API ---")
+    with urllib.request.urlopen('http://localhost:5000/api/students/sample-template') as res:
+        assert res.status == 200
+        template_bytes = res.read()
+        assert len(template_bytes) > 1000
+        print(f"✓ Downloaded sample Excel template ({len(template_bytes)} bytes).")
+
+    # Test uploading that template back
+    boundary3 = '----Boundary' + uuid.uuid4().hex
+    body_excel = bytearray()
+    body_excel.extend(f'--{boundary3}\r\nContent-Disposition: form-data; name="file"; filename="Excellencia_Students.xlsx"\r\nContent-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\r\n\r\n'.encode('utf-8'))
+    body_excel.extend(template_bytes)
+    body_excel.extend(f'\r\n--{boundary3}--\r\n'.encode('utf-8'))
+
+    excel_req = urllib.request.Request(
+        'http://localhost:5000/api/students/bulk-upload',
+        data=bytes(body_excel),
+        headers={
+            'Content-Type': f'multipart/form-data; boundary={boundary3}',
+            'Content-Length': str(len(body_excel))
+        }
+    )
+    with urllib.request.urlopen(excel_req) as res:
+        excel_res = json.loads(res.read().decode('utf-8'))
+        assert excel_res['success'] is True
+        print(f"✓ Excel Bulk Import Success: {excel_res['message']} (Processed {excel_res['count']} students)")
+
     print("\n==========================================")
     print("ALL TESTS PASSED WITH 100% SUCCESS!")
     print("==========================================")
