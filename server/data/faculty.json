@@ -1,0 +1,57 @@
+[
+  {
+    "id": "FAC01",
+    "name": "Prof. K. Venkatesh Rao",
+    "subject": "Mathematics",
+    "department": "JEE & IPE Advanced Mathematics",
+    "phone": "919848012345",
+    "email": "k.venkateshrao@excellencia.edu.in",
+    "designation": "Senior HOD - Mathematics",
+    "availableHours": "4:00 PM - 8:30 PM",
+    "bio": "15+ years experience mentoring top 100 JEE Mains & Advanced rankers."
+  },
+  {
+    "id": "FAC02",
+    "name": "Dr. Ramesh Chander",
+    "subject": "Physics",
+    "department": "Mechanics, Electrodynamics & Optics",
+    "phone": "919849123456",
+    "email": "ramesh.chander@excellencia.edu.in",
+    "designation": "Senior Faculty - Physics",
+    "availableHours": "5:00 PM - 9:00 PM",
+    "bio": "Former IITian specializing in concept clarity & numerical shortcuts."
+  },
+  {
+    "id": "FAC03",
+    "name": "Mrs. Sunita Sharma",
+    "subject": "Chemistry",
+    "department": "Organic & Inorganic Chemistry",
+    "phone": "919849234567",
+    "email": "sunita.sharma@excellencia.edu.in",
+    "designation": "HOD - Chemistry (NEET / JEE)",
+    "availableHours": "3:30 PM - 7:30 PM",
+    "bio": "Expert in Organic reaction mechanisms and NEET high-yield questions."
+  },
+  {
+    "id": "FAC04",
+    "name": "Dr. Shalini Prasad",
+    "subject": "Biology",
+    "department": "Botany & Zoology (NEET Specialist)",
+    "phone": "919849345678",
+    "email": "shalini.prasad@excellencia.edu.in",
+    "designation": "Senior Faculty - Biology",
+    "availableHours": "4:30 PM - 8:30 PM",
+    "bio": "Authored multiple NEET preparation modules and NCERT diagram walkthroughs."
+  },
+  {
+    "id": "FAC05",
+    "name": "Mr. Joseph Anthony",
+    "subject": "English",
+    "department": "Language & Communication Skills",
+    "phone": "919849456789",
+    "email": "joseph.anthony@excellencia.edu.in",
+    "designation": "Faculty - English & Soft Skills",
+    "availableHours": "2:00 PM - 6:00 PM",
+    "bio": "Experienced educator focusing on IPE scoring patterns and grammar mastery."
+  }
+]

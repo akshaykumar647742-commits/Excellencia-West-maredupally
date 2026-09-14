@@ -1,0 +1,47 @@
+[
+  {
+    "id": "EXM101",
+    "name": "Aarav Sharma",
+    "classBatch": "Class 11 - JEE Batch A",
+    "stream": "MPC (Maths, Physics, Chemistry)",
+    "phone": "+91 98765 43210",
+    "rollNo": "2024-11-01",
+    "joinDate": "2024-06-15"
+  },
+  {
+    "id": "EXM102",
+    "name": "Ananya Reddy",
+    "classBatch": "Class 12 - NEET Medical",
+    "stream": "BiPC (Biology, Physics, Chemistry)",
+    "phone": "+91 98765 43211",
+    "rollNo": "2023-12-05",
+    "joinDate": "2023-06-12"
+  },
+  {
+    "id": "EXM103",
+    "name": "Sai Krishna",
+    "classBatch": "Class 12 - JEE Advanced Focus",
+    "stream": "MPC (Maths, Physics, Chemistry)",
+    "phone": "+91 98765 43212",
+    "rollNo": "2023-12-14",
+    "joinDate": "2023-06-12"
+  },
+  {
+    "id": "EXM104",
+    "name": "Rhea Verghese",
+    "classBatch": "Class 11 - IPE + NEET",
+    "stream": "BiPC (Biology, Physics, Chemistry)",
+    "phone": "+91 98765 43213",
+    "rollNo": "2024-11-19",
+    "joinDate": "2024-06-15"
+  },
+  {
+    "id": "EXM105",
+    "name": "Karthik Varma",
+    "classBatch": "Class 11 - JEE Foundation",
+    "stream": "MPC (Maths, Physics, Chemistry)",
+    "phone": "+91 98765 43214",
+    "rollNo": "2024-11-30",
+    "joinDate": "2024-06-15"
+  }
+]

@@ -1,0 +1,68 @@
+[
+  {
+    "id": "doubt-1789363121270",
+    "studentId": "EXM101",
+    "studentName": "Aarav Sharma",
+    "facultyId": "FAC01",
+    "facultyName": "Prof. K. Venkatesh Rao",
+    "subject": "Mathematics",
+    "topic": "Definite Integrals",
+    "question": "How do we use Leibniz rule when the upper limit is x^2?",
+    "timestamp": "2026-09-14T05:18:41.270Z"
+  },
+  {
+    "id": "doubt-1789363100252",
+    "studentId": "EXM101",
+    "studentName": "Aarav Sharma",
+    "facultyId": "FAC01",
+    "facultyName": "Prof. K. Venkatesh Rao",
+    "subject": "Mathematics",
+    "topic": "Definite Integrals",
+    "question": "How do we use Leibniz rule when the upper limit is x^2?",
+    "timestamp": "2026-09-14T05:18:20.253Z"
+  },
+  {
+    "id": "doubt-1789362371279",
+    "studentId": "EXM101",
+    "studentName": "Aarav Sharma",
+    "facultyId": "FAC01",
+    "facultyName": "Prof. K. Venkatesh Rao",
+    "subject": "Mathematics",
+    "topic": "Definite Integrals",
+    "question": "How do we use Leibniz rule when the upper limit is x^2?",
+    "timestamp": "2026-09-14T05:06:11.279Z"
+  },
+  {
+    "id": "doubt-1789361864401",
+    "studentId": "EXM101",
+    "studentName": "Aarav Sharma",
+    "facultyId": "FAC01",
+    "facultyName": "Prof. K. Venkatesh Rao",
+    "subject": "Mathematics",
+    "topic": "Definite Integrals",
+    "question": "How do we use Leibniz rule when the upper limit is x^2?",
+    "timestamp": "2026-09-14T04:57:44.401Z"
+  },
+  {
+    "id": "doubt-1789361851157",
+    "studentId": "EXM101",
+    "studentName": "Aarav Sharma",
+    "facultyId": "FAC01",
+    "facultyName": "Prof. K. Venkatesh Rao",
+    "subject": "Mathematics",
+    "topic": "Definite Integrals",
+    "question": "How do we use Leibniz rule when the upper limit is x^2?",
+    "timestamp": "2026-09-14T04:57:31.157Z"
+  },
+  {
+    "id": "doubt-1789361827903",
+    "studentId": "EXM101",
+    "studentName": "Aarav Sharma",
+    "facultyId": "FAC01",
+    "facultyName": "Prof. K. Venkatesh Rao",
+    "subject": "Mathematics",
+    "topic": "Definite Integrals",
+    "question": "How do we use Leibniz rule when the upper limit is x^2?",
+    "timestamp": "2026-09-14T04:57:07.903Z"
+  }
+]

@@ -1,0 +1,282 @@
+[
+  {
+    "id": "mat-1789363123312",
+    "title": "Optics Wave Theory Master Practice Sheet",
+    "subject": "Physics",
+    "category": "Worksheet",
+    "classBatch": "Class 12 - JEE Advanced",
+    "description": "Interference, diffraction, and polarization practice problems.",
+    "facultyName": "Dr. Ramesh Chander",
+    "facultyId": "FAC02",
+    "fileName": "Physics_Wave_Optics_Practice.pdf",
+    "fileUrl": "/uploads/1789363123311-2163-Physics_Wave_Optics_Practice.pdf",
+    "fileSize": "42 B",
+    "uploadDate": "2026-09-14",
+    "totalQuestions": 20,
+    "hasSolutions": true,
+    "tags": [
+      "Physics",
+      "Worksheet"
+    ]
+  },
+  {
+    "id": "mat-1789363102291",
+    "title": "Optics Wave Theory Master Practice Sheet",
+    "subject": "Physics",
+    "category": "Worksheet",
+    "classBatch": "Class 12 - JEE Advanced",
+    "description": "Interference, diffraction, and polarization practice problems.",
+    "facultyName": "Dr. Ramesh Chander",
+    "facultyId": "FAC02",
+    "fileName": "Physics_Wave_Optics_Practice.pdf",
+    "fileUrl": "/uploads/1789363102284-6347-Physics_Wave_Optics_Practice.pdf",
+    "fileSize": "42 B",
+    "uploadDate": "2026-09-14",
+    "totalQuestions": 20,
+    "hasSolutions": true,
+    "tags": [
+      "Physics",
+      "Worksheet"
+    ]
+  },
+  {
+    "id": "mat-1789362371296",
+    "title": "Optics Wave Theory Master Practice Sheet",
+    "subject": "Physics",
+    "category": "Worksheet",
+    "classBatch": "Class 12 - JEE Advanced",
+    "description": "Interference, diffraction, and polarization practice problems.",
+    "facultyName": "Dr. Ramesh Chander",
+    "facultyId": "FAC02",
+    "fileName": "Physics_Wave_Optics_Practice.pdf",
+    "fileUrl": "/uploads/1789362371292-8427-Physics_Wave_Optics_Practice.pdf",
+    "fileSize": "42 B",
+    "uploadDate": "2026-09-14",
+    "totalQuestions": 20,
+    "hasSolutions": true,
+    "tags": [
+      "Physics",
+      "Worksheet"
+    ]
+  },
+  {
+    "id": "mat-1789361864418",
+    "title": "Optics Wave Theory Master Practice Sheet",
+    "subject": "Physics",
+    "category": "Worksheet",
+    "classBatch": "Class 12 - JEE Advanced",
+    "description": "Interference, diffraction, and polarization practice problems.",
+    "facultyName": "Dr. Ramesh Chander",
+    "facultyId": "FAC02",
+    "fileName": "Physics_Wave_Optics_Practice.pdf",
+    "fileUrl": "/uploads/1789361864411-2280-Physics_Wave_Optics_Practice.pdf",
+    "fileSize": "42 B",
+    "uploadDate": "2026-09-14",
+    "totalQuestions": 20,
+    "hasSolutions": true,
+    "tags": [
+      "Physics",
+      "Worksheet"
+    ]
+  },
+  {
+    "id": "mat-1",
+    "title": "Calculus - Definite Integrals & Area Under Curves",
+    "subject": "Mathematics",
+    "category": "Worksheet",
+    "classBatch": "Class 12 - JEE Advanced",
+    "description": "Level 1 to Level 3 problems covering properties of definite integrals, Leibniz rule, and symmetric integral shortcuts.",
+    "facultyName": "Prof. K. Venkatesh Rao",
+    "facultyId": "FAC01",
+    "fileName": "Maths_Class12_Definite_Integrals_Worksheet.pdf",
+    "fileUrl": "/uploads/Maths_Class12_Definite_Integrals_Worksheet.pdf",
+    "fileSize": "1.4 MB",
+    "uploadDate": "2026-09-12",
+    "totalQuestions": 35,
+    "hasSolutions": true,
+    "tags": [
+      "Calculus",
+      "Integration",
+      "JEE Advanced",
+      "Worksheet"
+    ]
+  },
+  {
+    "id": "mat-2",
+    "title": "Rotational Dynamics & Moment of Inertia Master DPP",
+    "subject": "Physics",
+    "category": "Daily Practice Problems (DPP)",
+    "classBatch": "Class 11 - JEE Batch A",
+    "description": "Comprehensive DPP covering rolling without slipping, torque balance, and angular momentum conservation.",
+    "facultyName": "Dr. Ramesh Chander",
+    "facultyId": "FAC02",
+    "fileName": "Physics_Class11_Rotational_Motion_DPP.pdf",
+    "fileUrl": "/uploads/Physics_Class11_Rotational_Motion_DPP.pdf",
+    "fileSize": "2.1 MB",
+    "uploadDate": "2026-09-13",
+    "totalQuestions": 25,
+    "hasSolutions": true,
+    "tags": [
+      "Mechanics",
+      "Rotational Motion",
+      "Moment of Inertia",
+      "DPP"
+    ]
+  },
+  {
+    "id": "mat-3",
+    "title": "Organic Chemistry - Named Reactions & Reaction Roadmaps",
+    "subject": "Chemistry",
+    "category": "Formula Sheet",
+    "classBatch": "All Batches (Class 11 & 12)",
+    "description": "Complete 1-sheet summary of Aldehydes, Ketones, Carboxylic Acids, and Diazonium salt conversions.",
+    "facultyName": "Mrs. Sunita Sharma",
+    "facultyId": "FAC03",
+    "fileName": "Chemistry_Organic_Named_Reactions_QuickRev.pdf",
+    "fileUrl": "/uploads/Chemistry_Organic_Named_Reactions_QuickRev.pdf",
+    "fileSize": "3.2 MB",
+    "uploadDate": "2026-09-10",
+    "totalQuestions": 0,
+    "hasSolutions": false,
+    "tags": [
+      "Organic Chemistry",
+      "Named Reactions",
+      "NEET",
+      "JEE",
+      "Quick Revision"
+    ]
+  },
+  {
+    "id": "mat-4",
+    "title": "Human Physiology - Endocrine System & Neural Control",
+    "subject": "Biology",
+    "category": "Worksheet",
+    "classBatch": "Class 12 - NEET Medical",
+    "description": "High-yield NCERT line-by-line questions and diagram-based labeling worksheet for NEET 2026/2027.",
+    "facultyName": "Dr. Shalini Prasad",
+    "facultyId": "FAC04",
+    "fileName": "Biology_NEET_Endocrine_Neural_Worksheet.pdf",
+    "fileUrl": "/uploads/Biology_NEET_Endocrine_Neural_Worksheet.pdf",
+    "fileSize": "1.8 MB",
+    "uploadDate": "2026-09-13",
+    "totalQuestions": 50,
+    "hasSolutions": true,
+    "tags": [
+      "Physiology",
+      "NCERT",
+      "NEET",
+      "Endocrine",
+      "Worksheet"
+    ]
+  },
+  {
+    "id": "mat-5",
+    "title": "Electromagnetic Induction & Alternating Current (AC)",
+    "subject": "Physics",
+    "category": "Lecture Notes",
+    "classBatch": "Class 12 - JEE / IPE",
+    "description": "Faculty handwritten notes on Faraday's Laws, Lenz Law, Mutual Inductance and LCR resonance circuits.",
+    "facultyName": "Dr. Ramesh Chander",
+    "facultyId": "FAC02",
+    "fileName": "Physics_Class12_EMI_AC_Notes.pdf",
+    "fileUrl": "/uploads/Physics_Class12_EMI_AC_Notes.pdf",
+    "fileSize": "4.5 MB",
+    "uploadDate": "2026-09-08",
+    "totalQuestions": 0,
+    "hasSolutions": false,
+    "tags": [
+      "Electrodynamics",
+      "AC Circuits",
+      "Lecture Notes",
+      "Class 12"
+    ]
+  },
+  {
+    "id": "mat-6",
+    "title": "Permutations & Combinations + Probability Worksheet",
+    "subject": "Mathematics",
+    "category": "Worksheet",
+    "classBatch": "Class 11 - JEE Foundation",
+    "description": "Focus on multinomial theorem, derangements, conditional probability and Bayes theorem.",
+    "facultyName": "Prof. K. Venkatesh Rao",
+    "facultyId": "FAC01",
+    "fileName": "Maths_Class11_PnC_Probability_Worksheet.pdf",
+    "fileUrl": "/uploads/Maths_Class11_PnC_Probability_Worksheet.pdf",
+    "fileSize": "1.2 MB",
+    "uploadDate": "2026-09-05",
+    "totalQuestions": 30,
+    "hasSolutions": true,
+    "tags": [
+      "Algebra",
+      "PnC",
+      "Probability",
+      "Worksheet"
+    ]
+  },
+  {
+    "id": "mat-7",
+    "title": "Chemical Equilibrium & Ionic Equilibrium Problem Set",
+    "subject": "Chemistry",
+    "category": "Daily Practice Problems (DPP)",
+    "classBatch": "Class 11 - All Batches",
+    "description": "Buffer solutions, solubility product (Ksp), pH calculations, and common ion effect practice problems.",
+    "facultyName": "Mrs. Sunita Sharma",
+    "facultyId": "FAC03",
+    "fileName": "Chemistry_Class11_Equilibrium_DPP.pdf",
+    "fileUrl": "/uploads/Chemistry_Class11_Equilibrium_DPP.pdf",
+    "fileSize": "1.9 MB",
+    "uploadDate": "2026-09-02",
+    "totalQuestions": 25,
+    "hasSolutions": true,
+    "tags": [
+      "Physical Chemistry",
+      "Ionic Equilibrium",
+      "DPP",
+      "pH Calculations"
+    ]
+  },
+  {
+    "id": "mat-8",
+    "title": "Genetics & Molecular Basis of Inheritance PYQ Bank",
+    "subject": "Biology",
+    "category": "Previous Year Papers",
+    "classBatch": "Class 12 - NEET Medical",
+    "description": "Last 10 Years NEET & AIPMT questions categorized by topic: DNA replication, transcription, translation and operon models.",
+    "facultyName": "Dr. Shalini Prasad",
+    "facultyId": "FAC04",
+    "fileName": "Biology_Class12_Genetics_NEET_PYQ.pdf",
+    "fileUrl": "/uploads/Biology_Class12_Genetics_NEET_PYQ.pdf",
+    "fileSize": "2.8 MB",
+    "uploadDate": "2026-08-28",
+    "totalQuestions": 75,
+    "hasSolutions": true,
+    "tags": [
+      "Genetics",
+      "NEET PYQ",
+      "Molecular Biology",
+      "Previous Years"
+    ]
+  },
+  {
+    "id": "mat-9",
+    "title": "IPE English Reading Comprehension & Letter Writing Guide",
+    "subject": "English",
+    "category": "Lecture Notes",
+    "classBatch": "Class 11 & 12 - All Batches",
+    "description": "Format for formal letters, official correspondence, note-making and high-scoring essay outlines.",
+    "facultyName": "Mr. Joseph Anthony",
+    "facultyId": "FAC05",
+    "fileName": "English_IPE_Writing_Skills_Module.pdf",
+    "fileUrl": "/uploads/English_IPE_Writing_Skills_Module.pdf",
+    "fileSize": "950 KB",
+    "uploadDate": "2026-08-25",
+    "totalQuestions": 15,
+    "hasSolutions": true,
+    "tags": [
+      "English",
+      "IPE",
+      "Letter Writing",
+      "Comprehension"
+    ]
+  }
+]
