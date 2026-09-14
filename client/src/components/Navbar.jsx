@@ -98,52 +98,42 @@ export default function Navbar({
           {/* Profile & Logout for Student or Faculty */}
           {student ? (
             <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-              <div className="hidden lg:block text-right">
+              <div className="flex flex-col text-right">
                 <p className="text-xs font-bold text-slate-800 leading-tight flex items-center gap-1 justify-end">
-                  <UserCheck className="w-3 h-3 text-emerald-600" />
-                  {student.name}
+                  <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="truncate max-w-[130px]">{student.name}</span>
                 </p>
-                <p className="text-[11px] text-blue-600 font-mono font-bold">
-                  ID: {student.id}
+                <p className="text-[10px] text-blue-600 font-mono font-bold">
+                  Student ID: {student.id}
                 </p>
-              </div>
-              <div 
-                className="w-9 h-9 rounded-xl bg-blue-100 border border-blue-200 text-blue-800 font-bold flex items-center justify-center text-xs shadow-xs"
-                title={`${student.name} (${student.id})`}
-              >
-                {student.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
               </div>
               <button
                 onClick={onLogout}
-                className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                className="flex items-center gap-1 py-1.5 px-2.5 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors shadow-2xs"
                 title="Logout Student ID"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                <span>Logout</span>
               </button>
             </div>
           ) : facultyAuth ? (
             <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-              <div className="hidden lg:block text-right">
+              <div className="flex flex-col text-right">
                 <p className="text-xs font-bold text-amber-900 leading-tight flex items-center gap-1 justify-end">
-                  <ShieldCheck className="w-3 h-3 text-amber-600" />
-                  {facultyAuth.name}
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                  <span className="truncate max-w-[130px]">{facultyAuth.name}</span>
                 </p>
                 <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wider">
-                  {facultyAuth.subject || 'Faculty'}
+                  Faculty • {facultyAuth.subject || 'Teacher'}
                 </p>
-              </div>
-              <div 
-                className="w-9 h-9 rounded-xl bg-amber-100 border border-amber-300 text-amber-900 font-bold flex items-center justify-center text-xs shadow-xs"
-                title={`${facultyAuth.name} (${facultyAuth.subject || 'Faculty'})`}
-              >
-                {facultyAuth.name.replace('Prof.', '').replace('Dr.', '').trim()[0] || 'F'}
               </div>
               <button
                 onClick={onFacultyLogout}
-                className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                className="flex items-center gap-1 py-1.5 px-2.5 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors shadow-2xs"
                 title="Logout Faculty Session"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                <span>Logout</span>
               </button>
             </div>
           ) : (

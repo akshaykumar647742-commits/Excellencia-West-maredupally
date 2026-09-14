@@ -18,7 +18,13 @@ export default function App() {
       return null;
     }
   });
-  const [activeView, setActiveView] = useState('materials'); // 'materials' | 'faculty' | 'login'
+  const [activeView, setActiveView] = useState(() => {
+    if (typeof window !== 'undefined') {
+      if (window.location.hash === '#login') return 'login';
+      if (window.location.hash === '#faculty') return 'faculty';
+    }
+    return 'materials';
+  });
   const [materials, setMaterials] = useState([]);
   const [facultyList, setFacultyList] = useState([]);
   const [students, setStudents] = useState([]);
@@ -51,6 +57,14 @@ export default function App() {
     } catch (e) {
       console.warn('Failed to parse saved auth sessions:', e);
     }
+
+    const handleHashChange = () => {
+      if (window.location.hash === '#login') setActiveView('login');
+      else if (window.location.hash === '#faculty') setActiveView('faculty');
+      else if (window.location.hash === '#materials' || window.location.hash === '') setActiveView('materials');
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, [activeView]);
 
   // Fetch initial data
@@ -85,7 +99,9 @@ export default function App() {
 
   const handleLogout = () => {
     setStudent(null);
+    setFacultyAuth(null);
     localStorage.removeItem('excellencia_student');
+    localStorage.removeItem('excellencia_faculty_auth');
   };
 
   const handleRequireLogin = ({ material, action }) => {

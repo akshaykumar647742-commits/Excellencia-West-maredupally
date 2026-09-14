@@ -23,6 +23,7 @@ import {
   Download
 } from 'lucide-react';
 import { api } from '../services/api';
+import { getProtectedFileUrl } from '../utils/authUrl';
 
 export default function FacultyPortal({ 
   materials = [], 
@@ -727,7 +728,7 @@ export default function FacultyPortal({
                     <td className="py-3 px-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <a
-                          href={m.fileUrl}
+                          href={getProtectedFileUrl(m.fileUrl, null, facultyAuth)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-1.5 rounded-lg text-slate-500 hover:text-blue-700 hover:bg-blue-50"

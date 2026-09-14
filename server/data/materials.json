@@ -1,5 +1,25 @@
 [
   {
+    "id": "mat-1789370708817",
+    "title": "Optics Wave Theory Master Practice Sheet",
+    "subject": "Physics",
+    "category": "Worksheet",
+    "classBatch": "Class 12 - JEE Advanced",
+    "description": "Interference, diffraction, and polarization practice problems.",
+    "facultyName": "Dr. Ramesh Chander",
+    "facultyId": "FAC02",
+    "fileName": "Physics_Wave_Optics_Practice.pdf",
+    "fileUrl": "/uploads/1789370708783-1034-Physics_Wave_Optics_Practice.pdf",
+    "fileSize": "42 B",
+    "uploadDate": "2026-09-14",
+    "totalQuestions": 20,
+    "hasSolutions": true,
+    "tags": [
+      "Physics",
+      "Worksheet"
+    ]
+  },
+  {
     "id": "mat-1789369752241",
     "title": "Optics Wave Theory Master Practice Sheet",
     "subject": "Physics",
