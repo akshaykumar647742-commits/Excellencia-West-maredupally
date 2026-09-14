@@ -5,10 +5,19 @@ import StudentLogin from './components/StudentLogin';
 import FacultyPortal from './components/FacultyPortal';
 import AskDoubtModal from './components/AskDoubtModal';
 import ViewMaterialModal from './components/ViewMaterialModal';
+import LoginRequiredModal from './components/LoginRequiredModal';
 import { api } from './services/api';
 
 export default function App() {
   const [student, setStudent] = useState(null);
+  const [facultyAuth, setFacultyAuth] = useState(() => {
+    try {
+      const saved = localStorage.getItem('excellencia_faculty_auth');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [activeView, setActiveView] = useState('materials'); // 'materials' | 'faculty' | 'login'
   const [materials, setMaterials] = useState([]);
   const [facultyList, setFacultyList] = useState([]);
@@ -21,17 +30,28 @@ export default function App() {
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewMaterial, setPreviewMaterial] = useState(null);
 
-  // Restore student session from localStorage
+  // Login Required Modal state
+  const [loginRequiredModalOpen, setLoginRequiredModalOpen] = useState(false);
+  const [loginRequiredContext, setLoginRequiredContext] = useState({ material: null, action: 'access' });
+  const [studentLoginReason, setStudentLoginReason] = useState('');
+
+  const isAuthenticated = Boolean(student || facultyAuth);
+
+  // Restore student & faculty sessions from localStorage
   useEffect(() => {
     try {
       const savedStudent = localStorage.getItem('excellencia_student');
       if (savedStudent) {
         setStudent(JSON.parse(savedStudent));
       }
+      const savedFaculty = localStorage.getItem('excellencia_faculty_auth');
+      if (savedFaculty) {
+        setFacultyAuth(JSON.parse(savedFaculty));
+      }
     } catch (e) {
-      console.warn('Failed to parse saved student session:', e);
+      console.warn('Failed to parse saved auth sessions:', e);
     }
-  }, []);
+  }, [activeView]);
 
   // Fetch initial data
   const fetchData = async () => {
@@ -59,6 +79,7 @@ export default function App() {
   const handleLoginSuccess = (loggedInStudent) => {
     setStudent(loggedInStudent);
     localStorage.setItem('excellencia_student', JSON.stringify(loggedInStudent));
+    setStudentLoginReason('');
     setActiveView('materials');
   };
 
@@ -67,12 +88,37 @@ export default function App() {
     localStorage.removeItem('excellencia_student');
   };
 
+  const handleRequireLogin = ({ material, action }) => {
+    setLoginRequiredContext({ material, action });
+    setLoginRequiredModalOpen(true);
+  };
+
+  const handleGoToStudentLogin = (targetMaterial = null) => {
+    const mat = targetMaterial || loginRequiredContext.material;
+    if (mat) {
+      setStudentLoginReason(`Please log in with your Student ID to view or download "${mat.title}".`);
+    } else {
+      setStudentLoginReason('Please log in with your Student ID to access protected study materials.');
+    }
+    setLoginRequiredModalOpen(false);
+    setActiveView('login');
+  };
+
+  const handleGoToFacultyLogin = () => {
+    setLoginRequiredModalOpen(false);
+    setActiveView('faculty');
+  };
+
   const handleOpenDoubt = (material = null) => {
     setDoubtMaterial(material);
     setDoubtModalOpen(true);
   };
 
   const handlePreview = (material) => {
+    if (!isAuthenticated) {
+      handleRequireLogin({ material, action: 'view' });
+      return;
+    }
     setPreviewMaterial(material);
     setPreviewModalOpen(true);
   };
@@ -90,7 +136,12 @@ export default function App() {
       {/* Navigation Header */}
       <Navbar
         student={student}
+        facultyAuth={facultyAuth}
         onLogout={handleLogout}
+        onFacultyLogout={() => {
+          setFacultyAuth(null);
+          localStorage.removeItem('excellencia_faculty_auth');
+        }}
         activeView={activeView}
         setActiveView={setActiveView}
         onOpenDoubtModal={() => handleOpenDoubt(null)}
@@ -102,7 +153,11 @@ export default function App() {
         {activeView === 'login' && (
           <StudentLogin
             onLoginSuccess={handleLoginSuccess}
-            onCancel={() => setActiveView('materials')}
+            onCancel={() => {
+              setStudentLoginReason('');
+              setActiveView('materials');
+            }}
+            alertMessage={studentLoginReason}
           />
         )}
 
@@ -124,9 +179,13 @@ export default function App() {
             materials={materials}
             loading={loadingMaterials}
             student={student}
+            facultyAuth={facultyAuth}
+            isAuthenticated={isAuthenticated}
             onOpenDoubtModal={handleOpenDoubt}
             onPreviewMaterial={handlePreview}
+            onRequireLogin={handleRequireLogin}
             onRefresh={fetchData}
+            onGoToStudentLogin={handleGoToStudentLogin}
           />
         )}
       </main>
@@ -163,10 +222,23 @@ export default function App() {
       {previewModalOpen && (
         <ViewMaterialModal
           material={previewMaterial}
+          student={student}
+          facultyAuth={facultyAuth}
           onClose={() => setPreviewModalOpen(false)}
           onAskDoubt={handleOpenDoubt}
+          onRequireLogin={handleRequireLogin}
         />
       )}
+
+      {/* Login Required Prompt Modal */}
+      <LoginRequiredModal
+        isOpen={loginRequiredModalOpen}
+        onClose={() => setLoginRequiredModalOpen(false)}
+        material={loginRequiredContext.material}
+        action={loginRequiredContext.action}
+        onGoToStudentLogin={handleGoToStudentLogin}
+        onGoToFacultyLogin={handleGoToFacultyLogin}
+      />
     </div>
   );
 }

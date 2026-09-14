@@ -12,7 +12,9 @@ import {
 
 export default function Navbar({ 
   student, 
+  facultyAuth = null,
   onLogout, 
+  onFacultyLogout,
   activeView, 
   setActiveView, 
   onOpenDoubtModal, 
@@ -93,7 +95,7 @@ export default function Navbar({
             <span>{activeView === 'faculty' ? 'Student View' : 'Portal'}</span>
           </button>
 
-          {/* Student Profile & Logout */}
+          {/* Profile & Logout for Student or Faculty */}
           {student ? (
             <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
               <div className="hidden lg:block text-right">
@@ -115,6 +117,31 @@ export default function Navbar({
                 onClick={onLogout}
                 className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                 title="Logout Student ID"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : facultyAuth ? (
+            <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+              <div className="hidden lg:block text-right">
+                <p className="text-xs font-bold text-amber-900 leading-tight flex items-center gap-1 justify-end">
+                  <ShieldCheck className="w-3 h-3 text-amber-600" />
+                  {facultyAuth.name}
+                </p>
+                <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wider">
+                  {facultyAuth.subject || 'Faculty'}
+                </p>
+              </div>
+              <div 
+                className="w-9 h-9 rounded-xl bg-amber-100 border border-amber-300 text-amber-900 font-bold flex items-center justify-center text-xs shadow-xs"
+                title={`${facultyAuth.name} (${facultyAuth.subject || 'Faculty'})`}
+              >
+                {facultyAuth.name.replace('Prof.', '').replace('Dr.', '').trim()[0] || 'F'}
+              </div>
+              <button
+                onClick={onFacultyLogout}
+                className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                title="Logout Faculty Session"
               >
                 <LogOut className="w-4 h-4" />
               </button>

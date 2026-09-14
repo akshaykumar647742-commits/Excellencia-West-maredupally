@@ -18,14 +18,19 @@ import {
   RefreshCw
 } from 'lucide-react';
 import MaterialCard from './MaterialCard';
+import { Lock, GraduationCap } from 'lucide-react';
 
 export default function MaterialsDashboard({ 
   materials = [], 
   loading, 
   student, 
+  facultyAuth = null,
+  isAuthenticated = false,
   onOpenDoubtModal, 
   onPreviewMaterial, 
-  onRefresh 
+  onRequireLogin,
+  onRefresh,
+  onGoToStudentLogin
 }) {
   const [selectedSubject, setSelectedSubject] = useState('All');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -302,6 +307,28 @@ export default function MaterialsDashboard({
           )}
         </div>
 
+        {/* Unauthenticated Security Notice Banner */}
+        {!isAuthenticated && (
+          <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-900 shadow-2xs">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-200/60 border border-amber-300 flex items-center justify-center text-amber-800 flex-shrink-0">
+                <Lock className="w-4 h-4" />
+              </div>
+              <div className="text-xs">
+                <span className="font-extrabold text-amber-950 block sm:inline">Protected Academic Repository: </span>
+                <span className="text-amber-800">Please log in with your Student ID or Faculty account to preview and download worksheets.</span>
+              </div>
+            </div>
+            <button
+              onClick={() => onGoToStudentLogin && onGoToStudentLogin()}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-colors shadow-2xs flex-shrink-0"
+            >
+              <GraduationCap className="w-3.5 h-3.5 text-amber-300" />
+              <span>Student Login</span>
+            </button>
+          </div>
+        )}
+
         {loading ? (
           <div className="py-20 text-center space-y-3">
             <div className="w-8 h-8 border-4 border-blue-900 border-t-transparent rounded-full animate-spin mx-auto"></div>
@@ -336,6 +363,10 @@ export default function MaterialsDashboard({
               <MaterialCard
                 key={material.id}
                 material={material}
+                isAuthenticated={isAuthenticated}
+                student={student}
+                facultyAuth={facultyAuth}
+                onRequireLogin={onRequireLogin}
                 onOpenDoubtModal={onOpenDoubtModal}
                 onPreview={onPreviewMaterial}
               />

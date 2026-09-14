@@ -7,11 +7,12 @@ import {
   BookOpen, 
   CheckCircle2, 
   UserPlus, 
-  Users 
+  Users,
+  Lock
 } from 'lucide-react';
 import { api } from '../services/api';
 
-export default function StudentLogin({ onLoginSuccess, onCancel }) {
+export default function StudentLogin({ onLoginSuccess, onCancel, alertMessage }) {
   const [studentId, setStudentId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -109,6 +110,18 @@ export default function StudentLogin({ onLoginSuccess, onCancel }) {
               : 'Login with your Student ID to access all worksheets, lecture notes, and faculty WhatsApp doubt clearing.'}
           </p>
         </div>
+
+        {alertMessage && (
+          <div className="p-3.5 bg-amber-50 border border-amber-300/80 rounded-2xl flex items-start gap-3 text-amber-900 text-xs shadow-2xs">
+            <div className="w-7 h-7 rounded-xl bg-amber-200/70 flex items-center justify-center text-amber-800 flex-shrink-0 mt-0.5">
+              <Lock className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-bold text-amber-950">Login Required to Continue</div>
+              <div className="text-amber-800 mt-0.5">{alertMessage}</div>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-rose-700 text-sm animate-shake">

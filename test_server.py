@@ -1,4 +1,5 @@
 import urllib.request
+import urllib.error
 import json
 import sys
 
@@ -41,12 +42,32 @@ def run_tests():
         student = login_res['student']
         print(f"✓ Student Login Success: {student['name']} (ID: {student['id']}, {student['classBatch']})")
 
-    print("\n--- 5. Testing PDF Worksheet Direct Download & View ---")
-    with urllib.request.urlopen('http://localhost:5000/uploads/Maths_Class12_Definite_Integrals_Worksheet.pdf') as res:
+    print("\n--- 5. Testing PDF Worksheet Protection (Unauthenticated 403 vs Authenticated 200) ---")
+    # 5a. Unauthenticated attempt must be blocked with HTTP 403
+    unauth_blocked = False
+    try:
+        urllib.request.urlopen('http://localhost:5000/uploads/Maths_Class12_Definite_Integrals_Worksheet.pdf')
+    except urllib.error.HTTPError as e:
+        if e.code == 403:
+            unauth_blocked = True
+            print(f"✓ Unauthenticated download properly blocked with HTTP 403 Forbidden.")
+        else:
+            raise
+    assert unauth_blocked, "Expected unauthenticated PDF request to be rejected with 403 Forbidden!"
+
+    # 5b. Authenticated student access succeeds with HTTP 200
+    with urllib.request.urlopen('http://localhost:5000/uploads/Maths_Class12_Definite_Integrals_Worksheet.pdf?studentId=EXM101') as res:
         assert res.status == 200
         content = res.read()
         assert len(content) > 100
-        print(f"✓ PDF served correctly with status {res.status} ({len(content)} bytes).")
+        print(f"✓ Authenticated student access succeeded with status {res.status} ({len(content)} bytes).")
+
+    # 5c. Authenticated faculty access succeeds with HTTP 200
+    with urllib.request.urlopen('http://localhost:5000/uploads/Maths_Class12_Definite_Integrals_Worksheet.pdf?facultyId=FAC00&auth=faculty') as res:
+        assert res.status == 200
+        content = res.read()
+        assert len(content) > 100
+        print(f"✓ Authenticated faculty access succeeded with status {res.status} ({len(content)} bytes).")
 
     print("\n--- 6. Testing WhatsApp Doubt Logging API ---")
     doubt_payload = {

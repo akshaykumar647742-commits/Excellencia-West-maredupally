@@ -24,8 +24,6 @@ if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
-// Serve uploaded files statically
-app.use('/uploads', express.static(UPLOADS_DIR));
 
 // Helper functions for reading and writing data
 const readJSON = (filename, fallback = []) => {
@@ -53,6 +51,101 @@ const writeJSON = (filename, data) => {
     return false;
   }
 };
+
+/* ============================================================
+   PROTECTED STUDY MATERIALS & WORKSHEETS DOWNLOADS / VIEWS
+   Requires Student ID or Faculty Authentication
+============================================================ */
+app.use('/uploads', (req, res, next) => {
+  const studentId = req.query.studentId || req.headers['x-student-id'];
+  const facultyId = req.query.facultyId || req.headers['x-faculty-id'];
+  const auth = req.query.auth || req.headers['authorization'];
+  const passcode = req.query.passcode;
+  const EXPECTED_PASSCODE = process.env.FACULTY_PASSCODE || 'excellencia2026';
+
+  let isAuthorized = false;
+
+  // 1. Verify Student Authentication
+  if (studentId) {
+    const students = readJSON('students.json', []);
+    const cleanId = String(studentId).trim().toUpperCase();
+    if (students.some(s => s.id.toUpperCase() === cleanId || (s.rollNo && s.rollNo.toUpperCase() === cleanId))) {
+      isAuthorized = true;
+    }
+  }
+
+  // 2. Verify Faculty Authentication
+  if (!isAuthorized && (facultyId || auth === 'faculty' || passcode)) {
+    if (passcode === EXPECTED_PASSCODE || auth === 'faculty') {
+      isAuthorized = true;
+    } else if (facultyId) {
+      const faculty = readJSON('faculty.json', []);
+      if (faculty.some(f => f.id === facultyId)) {
+        isAuthorized = true;
+      }
+    }
+  }
+
+  // 3. Fallback: Check token or Bearer header
+  if (!isAuthorized && auth) {
+    const cleanAuth = String(auth).replace('Bearer ', '').trim();
+    if (cleanAuth === EXPECTED_PASSCODE || cleanAuth === 'faculty' || cleanAuth.startsWith('EXM')) {
+      isAuthorized = true;
+    }
+  }
+
+  if (isAuthorized) {
+    return next();
+  }
+
+  // Unauthorized: Return 403 with prompt to login
+  res.status(403);
+  if (req.accepts('html') && !req.xhr && !req.path.endsWith('.json')) {
+    return res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Login Required | Excellencia West Marredpally</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+          .card { background: #1e293b; border: 1px solid #334155; border-radius: 24px; padding: 40px; max-width: 480px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+          .icon { width: 64px; height: 64px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 30px; margin-bottom: 20px; }
+          h2 { margin: 0 0 10px; font-size: 22px; font-weight: 800; color: #fff; }
+          p { color: #94a3b8; font-size: 14px; line-height: 1.6; margin: 0 0 24px; }
+          .badge { display: inline-block; padding: 4px 12px; background: #1e3a8a; color: #93c5fd; border-radius: 8px; font-size: 12px; font-weight: 700; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em; }
+          .btn { display: inline-block; width: 100%; padding: 14px 20px; background: #2563eb; color: #fff; text-decoration: none; font-weight: 700; border-radius: 14px; box-sizing: border-box; font-size: 15px; margin-bottom: 12px; transition: background 0.2s; }
+          .btn:hover { background: #1d4ed8; }
+          .btn-secondary { background: #334155; color: #e2e8f0; }
+          .btn-secondary:hover { background: #475569; }
+          .footer { margin-top: 24px; font-size: 12px; color: #64748b; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="icon">🔒</div>
+          <div class="badge">West Marredpally Campus</div>
+          <h2>Login Required</h2>
+          <p>This worksheet is an exclusive academic resource for students and teachers of Excellencia Junior College. Please log in to view or download.</p>
+          <a class="btn" href="/#login">Log in with Student ID</a>
+          <a class="btn btn-secondary" href="/#faculty">Faculty Portal</a>
+          <div class="footer">Excellencia Academic Repository & Faculty Doubt System</div>
+        </div>
+      </body>
+      </html>
+    `);
+  }
+
+  return res.json({
+    success: false,
+    error: 'AUTHENTICATION_REQUIRED',
+    message: 'Access Denied: Please log in with your Student ID or Faculty account to view or download this study material.'
+  });
+});
+
+// Serve uploaded files once authorized
+app.use('/uploads', express.static(UPLOADS_DIR));
 
 // Multer storage for uploads
 const storage = multer.diskStorage({

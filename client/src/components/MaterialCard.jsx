@@ -6,13 +6,23 @@ import {
   MessageCircleQuestion, 
   CheckCircle2, 
   Clock, 
-  Calendar,
-  Layers,
-  Sparkles,
-  ExternalLink
+  Calendar, 
+  Layers, 
+  Sparkles, 
+  ExternalLink,
+  Lock
 } from 'lucide-react';
+import { getProtectedFileUrl } from '../utils/authUrl';
 
-export default function MaterialCard({ material, onOpenDoubtModal, onPreview }) {
+export default function MaterialCard({ 
+  material, 
+  onOpenDoubtModal, 
+  onPreview,
+  isAuthenticated = false,
+  student = null,
+  facultyAuth = null,
+  onRequireLogin
+}) {
   // Subject badge color scheme
   const getSubjectColor = (subject) => {
     switch (subject.toLowerCase()) {
@@ -138,25 +148,54 @@ export default function MaterialCard({ material, onOpenDoubtModal, onPreview }) 
 
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-2 pt-1">
-          {/* View / Download */}
+          {/* View Worksheet */}
           <button
-            onClick={() => onPreview(material)}
-            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs font-bold border border-slate-300 transition-colors shadow-2xs"
+            onClick={() => {
+              if (!isAuthenticated) {
+                if (onRequireLogin) onRequireLogin({ material, action: 'view' });
+                return;
+              }
+              onPreview(material);
+            }}
+            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs font-bold border border-slate-300 transition-colors shadow-2xs group/btn"
+            title={isAuthenticated ? 'Preview Worksheet' : 'Login required to view'}
           >
-            <Eye className="w-3.5 h-3.5 text-blue-700" />
+            {isAuthenticated ? (
+              <Eye className="w-3.5 h-3.5 text-blue-700" />
+            ) : (
+              <Lock className="w-3.5 h-3.5 text-slate-400 group-hover/btn:text-amber-500" />
+            )}
             <span>View Worksheet</span>
           </button>
 
-          <a
-            href={material.fileUrl}
-            download={material.fileName}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-colors shadow-2xs"
+          {/* Download Worksheet */}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              if (!isAuthenticated) {
+                if (onRequireLogin) onRequireLogin({ material, action: 'download' });
+                return;
+              }
+              const protectedUrl = getProtectedFileUrl(material.fileUrl, student, facultyAuth);
+              const link = document.createElement('a');
+              link.href = protectedUrl;
+              link.download = material.fileName || 'worksheet.pdf';
+              link.target = '_blank';
+              link.rel = 'noopener noreferrer';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
+            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-colors shadow-2xs group/btn"
+            title={isAuthenticated ? 'Download Worksheet' : 'Login required to download'}
           >
-            <Download className="w-3.5 h-3.5 text-amber-300" />
+            {isAuthenticated ? (
+              <Download className="w-3.5 h-3.5 text-amber-300" />
+            ) : (
+              <Lock className="w-3.5 h-3.5 text-amber-300 group-hover/btn:scale-110 transition-transform" />
+            )}
             <span>Download</span>
-          </a>
+          </button>
         </div>
 
         {/* WhatsApp Doubt Button directly linked to this worksheet */}
