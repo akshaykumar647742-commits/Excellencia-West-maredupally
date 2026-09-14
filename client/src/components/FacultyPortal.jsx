@@ -313,20 +313,40 @@ export default function FacultyPortal({
     );
   }
 
+  // Master Admin check (Restricted to Prof. Akshay)
+  const isMasterAdmin = Boolean(
+    facultyAuth?.id === 'FAC00' || 
+    facultyAuth?.name?.toLowerCase().includes('akshay') || 
+    facultyAuth?.isAdmin
+  );
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
       {/* Top Banner */}
       <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-900 text-xs font-bold uppercase tracking-wider">
-              Faculty Administration
+            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+              isMasterAdmin 
+                ? 'bg-amber-400 text-slate-900 ring-2 ring-amber-300 font-extrabold' 
+                : 'bg-blue-600 text-white'
+            }`}>
+              {isMasterAdmin ? '👑 Master Administrator' : 'Faculty Member'}
             </span>
             <span className="text-slate-400 text-xs">• West Marredpally</span>
           </div>
           <h2 className="text-2xl font-black mt-1">Excellencia Faculty Management Portal</h2>
           <p className="text-slate-400 text-xs sm:text-sm mt-0.5">
             Logged in as: <strong className="text-amber-400 font-semibold">{facultyAuth.name}</strong> ({facultyAuth.subject || 'Faculty'})
+            {isMasterAdmin ? (
+              <span className="ml-2 text-emerald-400 text-xs font-bold bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-700">
+                ✓ Full Admin Editing Access (Teachers & Students)
+              </span>
+            ) : (
+              <span className="ml-2 text-slate-400 text-xs bg-slate-800 px-2 py-0.5 rounded-md">
+                Worksheet Upload Access Only
+              </span>
+            )}
           </p>
         </div>
 
@@ -742,18 +762,24 @@ export default function FacultyPortal({
             </div>
           </div>
 
-          {/* Add / Update Faculty Card */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
-            <div>
-              <h3 className="text-base font-bold text-slate-900">Add / Update Faculty</h3>
-              <p className="text-xs text-slate-500">Configure phone number for WhatsApp doubts.</p>
-            </div>
+          {/* Add / Update Faculty Card (Master Admin Only - Prof. Akshay) */}
+          {isMasterAdmin ? (
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Add / Update Faculty</h3>
+                  <p className="text-xs text-slate-500">Configure phone number for WhatsApp doubts.</p>
+                </div>
+                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px] uppercase border border-amber-300">
+                  Admin Only
+                </span>
+              </div>
 
-            {facultyMsg && (
-              <p className="text-xs p-2.5 bg-blue-50 text-blue-800 rounded-xl font-medium border border-blue-200">
-                {facultyMsg}
-              </p>
-            )}
+              {facultyMsg && (
+                <p className="text-xs p-2.5 bg-blue-50 text-blue-800 rounded-xl font-medium border border-blue-200">
+                  {facultyMsg}
+                </p>
+              )}
 
             <form onSubmit={handleSaveFaculty} className="space-y-3">
               <div>
@@ -814,6 +840,20 @@ export default function FacultyPortal({
               </button>
             </form>
           </div>
+          ) : (
+            <div className="bg-gradient-to-br from-slate-50 to-amber-50/50 rounded-3xl p-6 border border-amber-200 shadow-sm text-center space-y-3 self-start">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center mx-auto shadow-md">
+                <Lock className="w-6 h-6" />
+              </div>
+              <h4 className="text-sm font-black text-slate-900">Admin Editing Locked</h4>
+              <p className="text-xs text-slate-600 leading-relaxed max-w-xs mx-auto">
+                Only <strong>Prof. Akshay (Portal Administrator)</strong> has permission to modify faculty phone numbers and WhatsApp consultation channels.
+              </p>
+              <div className="pt-2 text-[11px] text-amber-800 font-bold">
+                Logged in as Faculty Member (View Only)
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -852,69 +892,89 @@ export default function FacultyPortal({
             </div>
           </div>
 
-          {/* Quick Add Student */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
-            <h3 className="text-base font-bold text-slate-900">Add New Student ID</h3>
-            {studentMsg && (
-              <p className="text-xs p-2.5 bg-blue-50 text-blue-800 rounded-xl font-medium border border-blue-200">
-                {studentMsg}
+          {/* Quick Add Student (Master Admin Only - Prof. Akshay) */}
+          {isMasterAdmin ? (
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-bold text-slate-900">Add New Student ID</h3>
+                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px] uppercase border border-amber-300">
+                  Admin Only
+                </span>
+              </div>
+              {studentMsg && (
+                <p className="text-xs p-2.5 bg-blue-50 text-blue-800 rounded-xl font-medium border border-blue-200">
+                  {studentMsg}
+                </p>
+              )}
+              <form onSubmit={handleAddStudent} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Student ID *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. EXM106"
+                    value={newStudent.id}
+                    onChange={(e) => setNewStudent({ ...newStudent, id: e.target.value.toUpperCase() })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono uppercase"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Student Full Name *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Rohan V"
+                    value={newStudent.name}
+                    onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Class / Batch</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Class 12 - JEE Advanced"
+                    value={newStudent.classBatch}
+                    onChange={(e) => setNewStudent({ ...newStudent, classBatch: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Stream</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. MPC"
+                    value={newStudent.stream}
+                    onChange={(e) => setNewStudent({ ...newStudent, stream: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-2.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow-xs"
+                >
+                  Register Student ID
+                </button>
+              </form>
+            </div>
+          ) : (
+            <div className="bg-gradient-to-br from-slate-50 to-amber-50/50 rounded-3xl p-6 border border-amber-200 shadow-sm text-center space-y-3 self-start">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center mx-auto shadow-md">
+                <Lock className="w-6 h-6" />
+              </div>
+              <h4 className="text-sm font-black text-slate-900">Admin Editing Locked</h4>
+              <p className="text-xs text-slate-600 leading-relaxed max-w-xs mx-auto">
+                Enrolling new student IDs and editing the student registry is strictly restricted to <strong>Prof. Akshay (Portal Administrator)</strong>.
               </p>
-            )}
-            <form onSubmit={handleAddStudent} className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Student ID *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. EXM106"
-                  value={newStudent.id}
-                  onChange={(e) => setNewStudent({ ...newStudent, id: e.target.value.toUpperCase() })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono uppercase"
-                  required
-                />
+              <div className="pt-2 text-[11px] text-amber-800 font-bold">
+                Logged in as Faculty Member (View Only)
               </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Student Full Name *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Rohan V"
-                  value={newStudent.name}
-                  onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Class / Batch</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Class 12 - JEE Advanced"
-                  value={newStudent.classBatch}
-                  onChange={(e) => setNewStudent({ ...newStudent, classBatch: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Stream</label>
-                <input
-                  type="text"
-                  placeholder="e.g. MPC"
-                  value={newStudent.stream}
-                  onChange={(e) => setNewStudent({ ...newStudent, stream: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-2.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow-xs"
-              >
-                Register Student ID
-              </button>
-            </form>
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>
