@@ -1,7 +1,7 @@
 [
   {
     "id": "FAC00",
-    "name": "Prof. Akshay",
+    "name": "Akshay",
     "subject": "Physics",
     "department": "Department of Physics (JEE & NEET)",
     "phone": "918639905551",
@@ -12,7 +12,7 @@
   },
   {
     "id": "FAC01",
-    "name": "Prof. K. Venkatesh Rao",
+    "name": "K. Venkatesh Rao",
     "subject": "Mathematics",
     "department": "JEE & IPE Advanced Mathematics",
     "phone": "919848012345",
@@ -23,7 +23,7 @@
   },
   {
     "id": "FAC02",
-    "name": "Dr. Ramesh Chander",
+    "name": "Ramesh Chander",
     "subject": "Physics",
     "department": "Mechanics, Electrodynamics & Optics",
     "phone": "919849123456",
@@ -34,7 +34,7 @@
   },
   {
     "id": "FAC03",
-    "name": "Mrs. Sunita Sharma",
+    "name": "Sunita Sharma",
     "subject": "Chemistry",
     "department": "Organic & Inorganic Chemistry",
     "phone": "919849234567",
@@ -45,7 +45,7 @@
   },
   {
     "id": "FAC04",
-    "name": "Dr. Shalini Prasad",
+    "name": "Shalini Prasad",
     "subject": "Biology",
     "department": "Botany & Zoology (NEET Specialist)",
     "phone": "919849345678",
@@ -56,7 +56,7 @@
   },
   {
     "id": "FAC05",
-    "name": "Mr. Joseph Anthony",
+    "name": "Joseph Anthony",
     "subject": "English",
     "department": "Language & Communication Skills",
     "phone": "919849456789",

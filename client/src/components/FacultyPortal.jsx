@@ -249,7 +249,7 @@ export default function FacultyPortal({
 
   const handleDeleteFaculty = async (faculty) => {
     if (faculty.id === 'FAC00') {
-      alert('Primary Administrator (Prof. Akshay) cannot be removed.');
+      alert('Primary Administrator (Akshay) cannot be removed.');
       return;
     }
     if (!confirm(`Are you sure you want to remove "${faculty.name}" (${faculty.subject}) from the faculty registry?\n\nThis will remove their WhatsApp doubt consultation channel and portal access.`)) {
@@ -852,7 +852,7 @@ export default function FacultyPortal({
                 <div key={f.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-blue-900 text-white font-bold flex items-center justify-center text-sm">
-                      {f.name.replace('Prof. ', '').replace('Dr. ', '').replace('Mrs. ', '').replace('Mr. ', '')[0]}
+                      {f.name?.trim()[0] || 'F'}
                     </div>
                     <div>
                       <h4 className="font-bold text-slate-900 text-sm">{f.name}</h4>
@@ -953,7 +953,7 @@ export default function FacultyPortal({
                 <label className="block text-xs font-bold text-slate-700 mb-1">Faculty Full Name *</label>
                 <input
                   type="text"
-                  placeholder="e.g. Dr. Anirudh Sharma"
+                  placeholder="e.g. Anirudh Sharma"
                   value={newFaculty.name}
                   onChange={(e) => setNewFaculty({ ...newFaculty, name: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
@@ -1028,7 +1028,7 @@ export default function FacultyPortal({
               </div>
               <h4 className="text-sm font-black text-slate-900">Admin Editing Locked</h4>
               <p className="text-xs text-slate-600 leading-relaxed max-w-xs mx-auto">
-                Only <strong>Prof. Akshay (Portal Administrator)</strong> has permission to modify faculty phone numbers and WhatsApp consultation channels.
+                Only <strong>Akshay (Portal Administrator)</strong> has permission to modify faculty phone numbers and WhatsApp consultation channels.
               </p>
               <div className="pt-2 text-[11px] text-amber-800 font-bold">
                 Logged in as Faculty Member (View Only)
@@ -1366,7 +1366,7 @@ export default function FacultyPortal({
               </div>
               <h4 className="text-sm font-black text-slate-900">Admin Editing Locked</h4>
               <p className="text-xs text-slate-600 leading-relaxed max-w-xs mx-auto">
-                Enrolling new student IDs and editing the student registry is strictly restricted to <strong>Prof. Akshay (Portal Administrator)</strong>.
+                Enrolling new student IDs and editing the student registry is strictly restricted to <strong>Akshay (Portal Administrator)</strong>.
               </p>
               <div className="pt-2 text-[11px] text-amber-800 font-bold">
                 Logged in as Faculty Member (View Only)

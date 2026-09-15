@@ -246,7 +246,7 @@ _Sent directly via Excellencia Academic Portal_`;
             <div className="p-3.5 bg-emerald-50/60 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white font-bold flex items-center justify-center text-sm">
-                  {activeFaculty.name.split(' ').slice(-1)[0][0]}
+                  {activeFaculty.name.trim()[0] || 'F'}
                 </div>
                 <div>
                   <h4 className="font-bold text-slate-900">{activeFaculty.name}</h4>

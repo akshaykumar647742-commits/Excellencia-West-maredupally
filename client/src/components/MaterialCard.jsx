@@ -135,7 +135,7 @@ export default function MaterialCard({
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
             <div className={`w-6 h-6 rounded-full text-white flex items-center justify-center text-[10px] font-bold ${colors.iconBg}`}>
-              {material.facultyName.replace('Prof.', '').replace('Dr.', '').replace('Mrs.', '').replace('Mr.', '').trim()[0] || 'F'}
+              {material.facultyName?.trim()[0] || 'F'}
             </div>
             <span className="font-medium text-slate-700 truncate max-w-[150px]">
               {material.facultyName}

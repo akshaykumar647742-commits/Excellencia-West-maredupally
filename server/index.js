@@ -478,7 +478,7 @@ app.delete('/api/faculty/:id', (req, res) => {
   if (id === 'FAC00') {
     return res.status(403).json({ 
       success: false, 
-      message: 'Primary Administrator (Prof. Akshay) cannot be removed.' 
+      message: 'Primary Administrator (Akshay) cannot be removed.' 
     });
   }
   let facultyList = readJSON('faculty.json', []);
