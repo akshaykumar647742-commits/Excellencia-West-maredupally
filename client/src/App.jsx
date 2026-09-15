@@ -4,6 +4,7 @@ import MaterialsDashboard from './components/MaterialsDashboard';
 import StudentLogin from './components/StudentLogin';
 import FacultyPortal from './components/FacultyPortal';
 import AskDoubtModal from './components/AskDoubtModal';
+import StudentDoubtsModal from './components/StudentDoubtsModal';
 import ViewMaterialModal from './components/ViewMaterialModal';
 import LoginRequiredModal from './components/LoginRequiredModal';
 import { api } from './services/api';
@@ -33,6 +34,7 @@ export default function App() {
   // Modals
   const [doubtModalOpen, setDoubtModalOpen] = useState(false);
   const [doubtMaterial, setDoubtMaterial] = useState(null);
+  const [studentDoubtsModalOpen, setStudentDoubtsModalOpen] = useState(false);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewMaterial, setPreviewMaterial] = useState(null);
 
@@ -161,6 +163,7 @@ export default function App() {
         activeView={activeView}
         setActiveView={setActiveView}
         onOpenDoubtModal={() => handleOpenDoubt(null)}
+        onOpenMyDoubts={() => setStudentDoubtsModalOpen(true)}
         facultyCount={facultyList.length}
       />
 
@@ -214,24 +217,36 @@ export default function App() {
               EXCELLENCIA JUNIOR COLLEGE — WEST MARREDPALLY
             </p>
             <p className="text-[11px] text-slate-500">
-              Official Academic Learning Repository & Faculty Doubt Clearing System
+              Official Academic Learning Repository & Faculty Doubt Resolution System
             </p>
           </div>
           <div className="flex items-center gap-4 text-[11px]">
-            <span className="text-slate-400">Direct WhatsApp Doubt Routing</span>
+            <span className="text-slate-400">Direct In-Portal Faculty Doubts</span>
             <span>•</span>
             <span className="text-amber-400 font-semibold">Class 11 & 12 • JEE & NEET</span>
           </div>
         </div>
       </footer>
 
-      {/* Doubt Routing WhatsApp Modal */}
+      {/* In-Portal Doubt Asking Modal */}
       <AskDoubtModal
         isOpen={doubtModalOpen}
         onClose={() => setDoubtModalOpen(false)}
         student={student}
         material={doubtMaterial}
         facultyList={facultyList}
+        onOpenMyDoubts={() => setStudentDoubtsModalOpen(true)}
+      />
+
+      {/* In-Portal Student Doubts & Solutions Log Modal */}
+      <StudentDoubtsModal
+        isOpen={studentDoubtsModalOpen}
+        onClose={() => setStudentDoubtsModalOpen(false)}
+        student={student}
+        onAskNewDoubt={() => {
+          setStudentDoubtsModalOpen(false);
+          handleOpenDoubt(null);
+        }}
       />
 
       {/* Document / Worksheet Preview Modal */}

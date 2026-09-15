@@ -130,9 +130,9 @@ export default function MaterialsDashboard({
 
             <p className="text-sm sm:text-base text-slate-300 font-normal leading-relaxed">
               {student ? (
-                <>Enrolled in <strong className="text-white">{student.classBatch}</strong> ({student.stream}). All chapter worksheets, DPPs, and formula sheets are organized below. Click any worksheet to practice or ask doubts directly to faculty on WhatsApp.</>
+                <>Enrolled in <strong className="text-white">{student.classBatch}</strong> ({student.stream}). All chapter worksheets, DPPs, and formula sheets are organized below. Click any worksheet to practice or ask doubts directly to faculty in your dashboard.</>
               ) : (
-                <>Access worksheets, daily practice problems (DPP), lecture notes, and formula sheets across all subjects at one glance. Have a doubt? Connect directly with faculty on WhatsApp.</>
+                <>Access worksheets, daily practice problems (DPP), lecture notes, and formula sheets across all subjects at one glance. Have a doubt? Ask faculty directly and receive step-by-step solutions right here in your dashboard.</>
               )}
             </p>
           </div>

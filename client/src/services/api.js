@@ -107,7 +107,44 @@ export const api = {
     return res.json();
   },
 
-  // Doubt logging
+  // In-Portal Doubts & Q&A
+  getDoubts: async (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.studentId) query.append('studentId', params.studentId);
+    if (params.facultyId) query.append('facultyId', params.facultyId);
+    if (params.subject && params.subject !== 'All') query.append('subject', params.subject);
+    if (params.status && params.status !== 'All') query.append('status', params.status);
+
+    const res = await fetch(`${API_BASE}/doubts?${query.toString()}`);
+    return res.json();
+  },
+
+  submitDoubt: async (doubtData) => {
+    const res = await fetch(`${API_BASE}/doubts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(doubtData)
+    });
+    return res.json();
+  },
+
+  answerDoubt: async (doubtId, answerData) => {
+    const res = await fetch(`${API_BASE}/doubts/${doubtId}/answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(answerData)
+    });
+    return res.json();
+  },
+
+  deleteDoubt: async (id) => {
+    const res = await fetch(`${API_BASE}/doubts/${id}`, {
+      method: 'DELETE'
+    });
+    return res.json();
+  },
+
+  // Doubt logging (backwards compatibility)
   logDoubt: async (doubtData) => {
     const res = await fetch(`${API_BASE}/doubts/log`, {
       method: 'POST',

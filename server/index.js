@@ -652,28 +652,136 @@ app.delete('/api/materials/:id', (req, res) => {
 });
 
 /* ============================================================
-   DOUBTS & INQUIRIES LOGGING
+   DOUBTS & IN-PORTAL Q&A SYSTEM
 ============================================================ */
 
-app.post('/api/doubts/log', (req, res) => {
-  const { studentId, studentName, facultyId, facultyName, subject, topic, question } = req.body;
-  const doubts = readJSON('doubts_log.json', []);
+// Get doubts with filtering by studentId, facultyId, subject, status
+app.get('/api/doubts', (req, res) => {
+  const { studentId, facultyId, subject, status } = req.query;
+  let doubts = readJSON('doubts_log.json', []);
 
-  const newLog = {
+  if (studentId) {
+    doubts = doubts.filter(d => String(d.studentId).toUpperCase() === String(studentId).toUpperCase());
+  }
+
+  if (facultyId) {
+    doubts = doubts.filter(d => d.facultyId === facultyId);
+  }
+
+  if (subject && subject !== 'All') {
+    doubts = doubts.filter(d => d.subject?.toLowerCase() === subject.toLowerCase());
+  }
+
+  if (status && status !== 'All') {
+    doubts = doubts.filter(d => (d.status || 'pending').toLowerCase() === status.toLowerCase());
+  }
+
+  // Sort newest first
+  doubts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  res.json(doubts);
+});
+
+// Submit a new student doubt (No WhatsApp required)
+app.post('/api/doubts', (req, res) => {
+  const { studentId, studentName, classBatch, facultyId, facultyName, subject, topic, question } = req.body;
+  if (!question || !question.trim()) {
+    return res.status(400).json({ success: false, message: 'Question content is required' });
+  }
+
+  const doubts = readJSON('doubts_log.json', []);
+  const newDoubt = {
     id: `doubt-${Date.now()}`,
-    studentId: studentId || 'Anonymous',
+    studentId: studentId ? String(studentId).trim().toUpperCase() : 'STUDENT',
+    studentName: studentName ? studentName.trim() : 'Student',
+    classBatch: classBatch || 'Class 11/12',
+    facultyId: facultyId || '',
+    facultyName: facultyName || 'Faculty',
+    subject: subject || 'General',
+    topic: topic ? topic.trim() : 'General Doubt',
+    question: question.trim(),
+    timestamp: new Date().toISOString(),
+    status: 'pending',
+    answer: null,
+    answeredBy: null,
+    answeredAt: null
+  };
+
+  doubts.unshift(newDoubt);
+  writeJSON('doubts_log.json', doubts.slice(0, 1000));
+  res.status(201).json({ 
+    success: true, 
+    doubt: newDoubt, 
+    message: 'Doubt submitted successfully! Your faculty will review and answer it soon.' 
+  });
+});
+
+// Backwards compatibility for /api/doubts/log
+app.post('/api/doubts/log', (req, res) => {
+  const { studentId, studentName, classBatch, facultyId, facultyName, subject, topic, question } = req.body;
+  const doubts = readJSON('doubts_log.json', []);
+  const newDoubt = {
+    id: `doubt-${Date.now()}`,
+    studentId: studentId ? String(studentId).trim().toUpperCase() : 'Anonymous',
     studentName: studentName || 'Student',
+    classBatch: classBatch || 'Class 11/12',
     facultyId,
     facultyName,
     subject,
     topic,
     question,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    status: 'pending',
+    answer: null,
+    answeredBy: null,
+    answeredAt: null
+  };
+  doubts.unshift(newDoubt);
+  writeJSON('doubts_log.json', doubts.slice(0, 1000));
+  res.json({ success: true, doubt: newDoubt });
+});
+
+// Faculty submits answer to a doubt
+app.post('/api/doubts/:id/answer', (req, res) => {
+  const { id } = req.params;
+  const { answer, answeredBy, facultyId } = req.body;
+
+  if (!answer || !answer.trim()) {
+    return res.status(400).json({ success: false, message: 'Answer text is required' });
+  }
+
+  let doubts = readJSON('doubts_log.json', []);
+  const index = doubts.findIndex(d => d.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ success: false, message: 'Doubt record not found' });
+  }
+
+  doubts[index] = {
+    ...doubts[index],
+    status: 'answered',
+    answer: answer.trim(),
+    answeredBy: answeredBy || doubts[index].facultyName || 'Faculty',
+    facultyId: facultyId || doubts[index].facultyId,
+    answeredAt: new Date().toISOString()
   };
 
-  doubts.unshift(newLog);
-  writeJSON('doubts_log.json', doubts.slice(0, 500)); // keep last 500
-  res.json({ success: true });
+  writeJSON('doubts_log.json', doubts);
+  res.json({ success: true, doubt: doubts[index], message: 'Answer submitted successfully!' });
+});
+
+// Delete a doubt record
+app.delete('/api/doubts/:id', (req, res) => {
+  const { id } = req.params;
+  let doubts = readJSON('doubts_log.json', []);
+  const beforeCount = doubts.length;
+  doubts = doubts.filter(d => d.id !== id);
+
+  if (doubts.length === beforeCount) {
+    return res.status(404).json({ success: false, message: 'Doubt not found' });
+  }
+
+  writeJSON('doubts_log.json', doubts);
+  res.json({ success: true, message: 'Doubt record removed successfully' });
 });
 
 // Serve frontend in production build if present

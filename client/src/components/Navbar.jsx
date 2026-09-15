@@ -7,7 +7,8 @@ import {
   LogOut, 
   ShieldCheck, 
   Sparkles,
-  PhoneCall
+  HelpCircle,
+  MessageSquare
 } from 'lucide-react';
 
 export default function Navbar({ 
@@ -18,6 +19,7 @@ export default function Navbar({
   activeView, 
   setActiveView, 
   onOpenDoubtModal, 
+  onOpenMyDoubts,
   facultyCount 
 }) {
   return (
@@ -31,9 +33,9 @@ export default function Navbar({
             <span className="hidden sm:inline text-blue-200">| Academic Portal 2026-27</span>
           </div>
           <div className="flex items-center gap-4 text-blue-200">
-            <span className="flex items-center gap-1">
-              <PhoneCall className="w-3 h-3 text-emerald-400" />
-              Direct Faculty WhatsApp Doubts Available
+            <span className="flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3 text-amber-300" />
+              Direct In-Portal Doubt Resolution & Answers
             </span>
           </div>
         </div>
@@ -67,19 +69,28 @@ export default function Navbar({
         </div>
 
         {/* Action Buttons & Profile */}
-        <div className="flex items-center gap-3">
-          {/* Quick Ask Doubt Button (Always accessible) */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Quick Ask Doubt Button */}
           <button
             onClick={() => onOpenDoubtModal()}
-            className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-sm hover:shadow-md transition-all active:scale-95"
-            title="Ask Doubt via Direct WhatsApp to Faculty"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-sm font-semibold shadow-sm hover:shadow-md transition-all active:scale-95"
+            title="Ask Academic Doubt Directly to Faculty"
           >
-            <MessageCircleQuestion className="w-4 h-4 text-emerald-200" />
-            <span>Ask Doubt on WhatsApp</span>
-            <span className="hidden md:inline-block text-[11px] bg-emerald-700 px-1.5 py-0.5 rounded-full font-bold">
-              Instant
-            </span>
+            <HelpCircle className="w-4 h-4 text-amber-300" />
+            <span>Ask Doubt</span>
           </button>
+
+          {/* If Student is logged in, show 'My Doubts & Answers' button */}
+          {student && onOpenMyDoubts && (
+            <button
+              onClick={onOpenMyDoubts}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-sm font-bold shadow-2xs transition-all active:scale-95"
+              title="View your submitted doubts and faculty solutions"
+            >
+              <MessageSquare className="w-4 h-4 text-amber-600" />
+              <span>My Doubts</span>
+            </button>
+          )}
 
           {/* Switch to Faculty Portal */}
           <button

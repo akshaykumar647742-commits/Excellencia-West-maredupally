@@ -5,12 +5,14 @@ import {
   User, 
   BookOpen, 
   Clock, 
-  Phone, 
   CheckCircle, 
+  CheckCircle2,
   HelpCircle, 
   Sparkles,
   MessageSquare,
-  AlertCircle
+  AlertCircle,
+  ArrowRight,
+  ShieldCheck
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -19,15 +21,18 @@ export default function AskDoubtModal({
   onClose, 
   student, 
   material, 
-  facultyList = [] 
+  facultyList = [],
+  onOpenMyDoubts
 }) {
   const [selectedSubject, setSelectedSubject] = useState('Mathematics');
   const [selectedFacultyId, setSelectedFacultyId] = useState('');
   const [topic, setTopic] = useState('');
   const [questionRef, setQuestionRef] = useState('');
   const [doubtText, setDoubtText] = useState('');
-  const [sending, setSending] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submittedDoubt, setSubmittedDoubt] = useState(null);
 
   // Initialize or update fields when material or modal changes
   useEffect(() => {
@@ -38,7 +43,7 @@ export default function AskDoubtModal({
 
       // Find faculty for this material if available
       const matchingFaculty = facultyList.find(
-        f => f.id === material.facultyId || f.name.toLowerCase() === material.facultyName.toLowerCase()
+        f => f.id === material.facultyId || f.name.toLowerCase() === (material.facultyName || '').toLowerCase()
       );
       if (matchingFaculty) {
         setSelectedFacultyId(matchingFaculty.id);
@@ -62,6 +67,14 @@ export default function AskDoubtModal({
     }
   }, [material, facultyList, isOpen]);
 
+  // Reset submission state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setIsSubmitted(false);
+      setErrorMsg('');
+    }
+  }, [isOpen]);
+
   // When subject changes, pick corresponding faculty
   const handleSubjectChange = (newSubject) => {
     setSelectedSubject(newSubject);
@@ -76,76 +89,48 @@ export default function AskDoubtModal({
   // Selected faculty details
   const activeFaculty = facultyList.find(f => f.id === selectedFacultyId) || facultyList[0];
 
-  // Build the pre-formatted WhatsApp message
-  const buildWhatsAppMessage = () => {
-    const studentName = student ? student.name : 'Student';
-    const studentId = student ? student.id : 'N/A';
-    const classBatch = student ? (student.classBatch || student.stream || 'Class 11/12') : 'Class 11/12';
-    const facName = activeFaculty ? activeFaculty.name : 'Sir/Madam';
-
-    return `🎓 *EXCELLENCIA - STUDENT DOUBT CLEARING*
-🏫 *Campus:* West Marredpally
-────────────────────
-👤 *Student:* ${studentName}
-🆔 *Student ID:* ${studentId}
-🏛️ *Class/Batch:* ${classBatch}
-📚 *Subject:* ${selectedSubject}
-👨‍🏫 *Faculty:* ${facName}
-${topic ? `📖 *Topic:* ${topic}\n` : ''}${questionRef ? `📝 *Reference:* ${questionRef}\n` : ''}────────────────────
-❓ *Doubt / Question:*
-"${doubtText || 'Sir/Madam, I have a doubt in this concept. Please guide me.'}"
-────────────────────
-_Sent directly via Excellencia Academic Portal_`;
-  };
-
-  const handleSendWhatsApp = async () => {
+  const handleSubmitDoubt = async (e) => {
+    if (e) e.preventDefault();
     if (!doubtText.trim()) {
-      alert('Please type your doubt or question first!');
+      setErrorMsg('Please describe your doubt or question clearly before submitting.');
       return;
     }
 
-    if (!activeFaculty || !activeFaculty.phone) {
-      alert('Faculty WhatsApp contact is not available.');
-      return;
-    }
+    setSubmitting(true);
+    setErrorMsg('');
 
-    setSending(true);
-
-    const message = buildWhatsAppMessage();
-
-    // Log the doubt to backend for student & faculty history
     try {
-      await api.logDoubt({
-        studentId: student ? student.id : 'Anonymous',
-        studentName: student ? student.name : 'Student',
-        facultyId: activeFaculty.id,
-        facultyName: activeFaculty.name,
+      const payload = {
+        studentId: student ? student.id : 'GUEST',
+        studentName: student ? student.name : 'Guest Student',
+        classBatch: student ? (student.classBatch || student.stream || 'Class 11/12') : 'General',
+        facultyId: activeFaculty ? activeFaculty.id : 'FAC01',
+        facultyName: activeFaculty ? activeFaculty.name : 'Faculty Member',
         subject: selectedSubject,
-        topic: topic || (material ? material.title : 'General Doubt'),
-        question: doubtText
-      });
-    } catch (e) {
-      console.warn('Doubt log error:', e);
+        topic: topic || (material ? material.title : 'General Concept'),
+        questionRef: questionRef || (material ? material.title : ''),
+        question: doubtText.trim()
+      };
+
+      const res = await api.submitDoubt(payload);
+      if (res.success) {
+        setSubmittedDoubt(res.doubt);
+        setIsSubmitted(true);
+      } else {
+        setErrorMsg(res.message || 'Failed to submit doubt. Please try again.');
+      }
+    } catch (err) {
+      setErrorMsg('Could not submit doubt: ' + err.message);
+    } finally {
+      setSubmitting(false);
     }
-
-    // Clean phone number (ensure country code, default to 91 if 10 digits)
-    let phoneNum = activeFaculty.phone.replace(/[^0-9]/g, '');
-    if (phoneNum.length === 10) {
-      phoneNum = '91' + phoneNum;
-    }
-
-    // Open WhatsApp URL
-    const whatsappUrl = `https://api.whatsapp.com/send?phone=${phoneNum}&text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-
-    setSending(false);
-    onClose();
   };
 
-  const handleCopyMessage = () => {
-    navigator.clipboard.writeText(buildWhatsAppMessage());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleResetForAnother = () => {
+    setIsSubmitted(false);
+    setDoubtText('');
+    setQuestionRef('');
+    setErrorMsg('');
   };
 
   // Filter faculty for selected subject or show all
@@ -158,15 +143,15 @@ _Sent directly via Excellencia Academic Portal_`;
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
       <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden my-6">
         {/* Modal Header */}
-        <div className="bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 text-white p-5 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-950 text-white p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center">
-              <MessageSquare className="w-5 h-5 text-emerald-200" />
+              <MessageSquare className="w-5 h-5 text-amber-300" />
             </div>
             <div>
               <h3 className="text-lg font-bold">Ask Doubt Directly to Faculty</h3>
-              <p className="text-xs text-emerald-100 flex items-center gap-1.5">
-                <span>Sends directly to faculty WhatsApp</span>
+              <p className="text-xs text-blue-200 flex items-center gap-1.5">
+                <span>Direct In-Portal Resolution</span>
                 <span>•</span>
                 <span>West Marredpally Faculty Team</span>
               </p>
@@ -182,174 +167,246 @@ _Sent directly via Excellencia Academic Portal_`;
 
         {/* Modal Body */}
         <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
-          {/* Student Status Bar */}
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-blue-900 text-white font-bold flex items-center justify-center">
-                {student ? student.name[0] : 'S'}
+          {isSubmitted ? (
+            /* SUCCESS CONFIRMATION SCREEN */
+            <div className="py-6 px-4 text-center space-y-5">
+              <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-md ring-8 ring-emerald-50">
+                <CheckCircle2 className="w-9 h-9" />
               </div>
+
               <div>
-                <p className="font-bold text-slate-800">
-                  {student ? student.name : 'Guest Student'}
-                </p>
-                <p className="text-blue-700 font-mono text-[11px]">
-                  ID: {student ? student.id : 'Not Logged In'} • {student ? student.classBatch : 'General'}
+                <span className="inline-block px-3 py-1 bg-emerald-50 text-emerald-800 text-xs font-bold rounded-full border border-emerald-200 uppercase tracking-wider mb-2">
+                  Doubt Forwarded to Faculty
+                </span>
+                <h4 className="text-xl font-black text-slate-900">
+                  Your Doubt Has Been Submitted!
+                </h4>
+                <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto mt-1 leading-relaxed">
+                  Teacher <strong className="text-slate-900">{submittedDoubt?.facultyName}</strong> has received your question in their Faculty Portal. Once answered, the teacher's solution will appear directly in your dashboard.
                 </p>
               </div>
-            </div>
-            <span className="hidden sm:inline-block px-2.5 py-1 bg-white text-blue-800 rounded-lg font-semibold border border-blue-200">
-              Verified Student
-            </span>
-          </div>
 
-          {/* Subject & Faculty Pickers */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Subject Selector */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                Select Subject *
-              </label>
-              <select
-                value={selectedSubject}
-                onChange={(e) => handleSubjectChange(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 focus:bg-white focus:border-emerald-600 focus:outline-none"
-              >
-                <option value="Mathematics">Mathematics</option>
-                <option value="Physics">Physics</option>
-                <option value="Chemistry">Chemistry</option>
-                <option value="Biology">Biology</option>
-                <option value="English">English</option>
-              </select>
-            </div>
-
-            {/* Faculty Selector */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                Select Faculty Member *
-              </label>
-              <select
-                value={selectedFacultyId}
-                onChange={(e) => setSelectedFacultyId(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 focus:bg-white focus:border-emerald-600 focus:outline-none"
-              >
-                {displayFacultyList.map(f => (
-                  <option key={f.id} value={f.id}>
-                    {f.name} ({f.subject})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Active Faculty Details Card */}
-          {activeFaculty && (
-            <div className="p-3.5 bg-emerald-50/60 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white font-bold flex items-center justify-center text-sm">
-                  {activeFaculty.name.trim()[0] || 'F'}
+              {/* Summary Card */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left text-xs space-y-2 max-w-lg mx-auto">
+                <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                  <span className="text-slate-500 font-medium">Subject & Teacher:</span>
+                  <span className="font-bold text-slate-800">{submittedDoubt?.subject} • {submittedDoubt?.facultyName}</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                  <span className="text-slate-500 font-medium">Topic / Reference:</span>
+                  <span className="font-bold text-blue-700">{submittedDoubt?.topic || 'General Concept'}</span>
                 </div>
                 <div>
-                  <h4 className="font-bold text-slate-900">{activeFaculty.name}</h4>
-                  <p className="text-slate-600 text-[11px]">{activeFaculty.designation || activeFaculty.department}</p>
-                  <p className="text-emerald-700 font-medium text-[11px] flex items-center gap-1 mt-0.5">
-                    <Clock className="w-3 h-3" />
-                    Available: {activeFaculty.availableHours || '4:00 PM - 8:00 PM'}
+                  <span className="text-slate-500 font-medium block mb-1">Your Question:</span>
+                  <p className="text-slate-700 bg-white p-2.5 rounded-xl border border-slate-200 italic line-clamp-3">
+                    "{submittedDoubt?.question}"
                   </p>
                 </div>
               </div>
-              <div className="text-right">
-                <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold bg-white px-2 py-1 rounded-md text-emerald-800 border border-emerald-200">
-                  <Phone className="w-3 h-3 text-emerald-600" />
-                  +91 {activeFaculty.phone.slice(-10)}
-                </span>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3">
+                {student && onOpenMyDoubts && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenMyDoubts();
+                    }}
+                    className="w-full sm:w-auto px-6 py-3 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                  >
+                    <span>View In "My Doubts & Answers"</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleResetForAnother}
+                  className="w-full sm:w-auto px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs sm:text-sm font-bold transition-colors"
+                >
+                  Ask Another Question
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="w-full sm:w-auto px-4 py-3 text-slate-500 hover:text-slate-700 text-xs font-semibold"
+                >
+                  Close
+                </button>
               </div>
             </div>
+          ) : (
+            /* SUBMISSION FORM */
+            <>
+              {errorMsg && (
+                <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-medium flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
+
+              {/* Student Status Bar */}
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-blue-900 text-white font-bold flex items-center justify-center">
+                    {student ? student.name[0] : 'S'}
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-800">
+                      {student ? student.name : 'Guest Student'}
+                    </p>
+                    <p className="text-blue-700 font-mono text-[11px]">
+                      ID: {student ? student.id : 'Not Logged In'} • {student ? student.classBatch : 'General'}
+                    </p>
+                  </div>
+                </div>
+                <span className="hidden sm:inline-block px-2.5 py-1 bg-white text-blue-800 rounded-lg font-semibold border border-blue-200">
+                  {student ? 'Verified Student' : 'Guest Mode'}
+                </span>
+              </div>
+
+              {/* Subject & Faculty Pickers */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Subject Selector */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    Select Subject *
+                  </label>
+                  <select
+                    value={selectedSubject}
+                    onChange={(e) => handleSubjectChange(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 focus:bg-white focus:border-blue-700 focus:outline-none"
+                  >
+                    <option value="Mathematics">Mathematics</option>
+                    <option value="Physics">Physics</option>
+                    <option value="Chemistry">Chemistry</option>
+                    <option value="Biology">Biology</option>
+                    <option value="English">English</option>
+                  </select>
+                </div>
+
+                {/* Faculty Selector */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    Select Faculty Member *
+                  </label>
+                  <select
+                    value={selectedFacultyId}
+                    onChange={(e) => setSelectedFacultyId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 focus:bg-white focus:border-blue-700 focus:outline-none"
+                  >
+                    {displayFacultyList.map(f => (
+                      <option key={f.id} value={f.id}>
+                        {f.name} ({f.subject})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Active Faculty Details Card */}
+              {activeFaculty && (
+                <div className="p-3.5 bg-indigo-50/60 border border-indigo-200 rounded-2xl flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-700 text-white font-bold flex items-center justify-center text-sm shadow-xs">
+                      {activeFaculty.name.trim()[0] || 'F'}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900">{activeFaculty.name}</h4>
+                      <p className="text-slate-600 text-[11px]">{activeFaculty.designation || activeFaculty.department || 'Senior Faculty'}</p>
+                      <p className="text-indigo-700 font-medium text-[11px] flex items-center gap-1 mt-0.5">
+                        <Clock className="w-3 h-3" />
+                        Doubt Resolution Hours: {activeFaculty.availableHours || '4:00 PM - 8:00 PM'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-white px-2.5 py-1 rounded-lg text-emerald-800 border border-emerald-200">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      In-Portal Inbox
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Reference & Topic */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    Topic / Chapter
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Definite Integrals, Rotational Motion"
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:border-blue-700 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    Question No. / Worksheet Ref
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Worksheet 3 - Q.14 or DPP Problem 6"
+                    value={questionRef}
+                    onChange={(e) => setQuestionRef(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:border-blue-700 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Doubt Details textarea */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                  Describe Your Doubt Clearly *
+                </label>
+                <textarea
+                  rows={4}
+                  placeholder="Explain where you are stuck, which step is causing confusion, or ask for the formula / shortcut..."
+                  value={doubtText}
+                  onChange={(e) => setDoubtText(e.target.value)}
+                  className="w-full p-3.5 bg-slate-50 border border-slate-300 rounded-2xl text-xs sm:text-sm text-slate-800 focus:bg-white focus:border-blue-700 focus:outline-none transition-colors"
+                  required
+                />
+              </div>
+
+              {/* In-Portal Feature Guarantee */}
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0 font-bold">
+                  <Sparkles className="w-4 h-4 text-amber-600" />
+                </div>
+                <div className="text-[11px] text-slate-600 leading-relaxed">
+                  <strong className="text-slate-800">Direct In-Portal Resolution:</strong> No WhatsApp required. Your question is delivered to your faculty member's portal dashboard. Once resolved, the step-by-step answer appears directly in your logged-in dashboard.
+                </div>
+              </div>
+            </>
           )}
-
-          {/* Reference & Topic */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                Topic / Chapter
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Definite Integrals, Rotational Motion"
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:border-emerald-600 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                Question No. / Worksheet Ref
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Worksheet 3 - Q.14 or DPP Problem 6"
-                value={questionRef}
-                onChange={(e) => setQuestionRef(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:border-emerald-600 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Doubt Details textarea */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-              Describe Your Doubt Clearly *
-            </label>
-            <textarea
-              rows={4}
-              placeholder="Explain where you are stuck, which step is causing confusion, or ask for the formula / shortcut..."
-              value={doubtText}
-              onChange={(e) => setDoubtText(e.target.value)}
-              className="w-full p-3.5 bg-slate-50 border border-slate-300 rounded-2xl text-xs sm:text-sm text-slate-800 focus:bg-white focus:border-emerald-600 focus:outline-none transition-colors"
-              required
-            />
-          </div>
-
-          {/* WhatsApp Message Preview */}
-          <div className="bg-slate-100 p-3.5 rounded-2xl border border-slate-200 text-xs">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="font-bold text-slate-600 flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-emerald-600" />
-                Live WhatsApp Message Preview
-              </span>
-              <button
-                type="button"
-                onClick={handleCopyMessage}
-                className="text-[11px] text-emerald-700 hover:text-emerald-900 font-semibold"
-              >
-                {copied ? '✓ Copied!' : 'Copy Text'}
-              </button>
-            </div>
-            <pre className="whitespace-pre-wrap font-sans bg-white p-3 rounded-xl border border-slate-200 text-slate-800 text-[11px] leading-relaxed select-all">
-              {buildWhatsAppMessage()}
-            </pre>
-          </div>
         </div>
 
         {/* Modal Footer */}
-        <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2.5 border border-slate-300 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-700"
-          >
-            Cancel
-          </button>
+        {!isSubmitted && (
+          <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2.5 border border-slate-300 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-700"
+            >
+              Cancel
+            </button>
 
-          <button
-            type="button"
-            onClick={handleSendWhatsApp}
-            disabled={sending || !doubtText.trim()}
-            className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all active:scale-98 disabled:opacity-50 disabled:pointer-events-none"
-          >
-            <Send className="w-4 h-4" />
-            <span>Open WhatsApp & Send to Faculty</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={handleSubmitDoubt}
+              disabled={submitting || !doubtText.trim()}
+              className="flex items-center gap-2 px-6 py-3 bg-blue-900 hover:bg-blue-800 active:bg-blue-950 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all active:scale-98 disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <Send className="w-4 h-4" />
+              <span>{submitting ? 'Submitting Doubt...' : 'Submit Doubt to Faculty'}</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
