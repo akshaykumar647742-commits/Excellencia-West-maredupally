@@ -33,6 +33,22 @@ export const api = {
     return res.json();
   },
 
+  deleteStudent: async (id) => {
+    const res = await fetch(`${API_BASE}/students/${encodeURIComponent(id)}`, {
+      method: 'DELETE'
+    });
+    return res.json();
+  },
+
+  bulkDeleteStudents: async (ids) => {
+    const res = await fetch(`${API_BASE}/students/bulk-delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids })
+    });
+    return res.json();
+  },
+
   // Faculty
   loginFaculty: async (passcode, facultyId) => {
     const res = await fetch(`${API_BASE}/faculty/login`, {

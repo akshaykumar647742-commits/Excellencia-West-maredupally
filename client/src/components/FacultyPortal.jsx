@@ -116,6 +116,10 @@ export default function FacultyPortal({
   });
   const [studentMsg, setStudentMsg] = useState('');
   const [studentSearchQuery, setStudentSearchQuery] = useState('');
+  const [selectedStudentIds, setSelectedStudentIds] = useState([]);
+  const [deletingStudentId, setDeletingStudentId] = useState(null);
+  const [deletingFacultyId, setDeletingFacultyId] = useState(null);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Excel Bulk Upload state
   const [excelFile, setExcelFile] = useState(null);
@@ -234,12 +238,79 @@ export default function FacultyPortal({
     try {
       const res = await api.saveFaculty(newFaculty);
       if (res.success) {
-        setFacultyMsg('Faculty WhatsApp contact saved successfully!');
+        setFacultyMsg(newFaculty.id ? 'Faculty details updated successfully!' : 'Faculty WhatsApp contact saved successfully!');
         setNewFaculty({ name: '', subject: 'Mathematics', phone: '', designation: '', availableHours: '4:00 PM - 8:00 PM' });
         onFacultyUpdated();
       }
     } catch (err) {
       setFacultyMsg('Error saving faculty: ' + err.message);
+    }
+  };
+
+  const handleDeleteFaculty = async (faculty) => {
+    if (faculty.id === 'FAC00') {
+      alert('Primary Administrator (Prof. Akshay) cannot be removed.');
+      return;
+    }
+    if (!confirm(`Are you sure you want to remove "${faculty.name}" (${faculty.subject}) from the faculty registry?\n\nThis will remove their WhatsApp doubt consultation channel and portal access.`)) {
+      return;
+    }
+    setDeletingFacultyId(faculty.id);
+    try {
+      const res = await api.deleteFaculty(faculty.id);
+      if (res.success) {
+        setFacultyMsg(`✓ Faculty member "${faculty.name}" removed successfully.`);
+        if (onFacultyUpdated) onFacultyUpdated();
+      } else {
+        alert(res.message || 'Failed to remove faculty');
+      }
+    } catch (err) {
+      alert('Error removing faculty: ' + err.message);
+    } finally {
+      setDeletingFacultyId(null);
+    }
+  };
+
+  const handleDeleteStudent = async (student) => {
+    if (!confirm(`Are you sure you want to remove student "${student.name}" (ID: ${student.id}) from the registry?\n\nThey will no longer be able to log in to access protected materials.`)) {
+      return;
+    }
+    setDeletingStudentId(student.id);
+    try {
+      const res = await api.deleteStudent(student.id);
+      if (res.success) {
+        setStudentMsg(`✓ Student ${student.name} (${student.id}) removed successfully.`);
+        setSelectedStudentIds(prev => prev.filter(id => id !== student.id));
+        if (onStudentAdded) onStudentAdded();
+      } else {
+        alert(res.message || 'Failed to remove student');
+      }
+    } catch (err) {
+      alert('Error removing student: ' + err.message);
+    } finally {
+      setDeletingStudentId(null);
+    }
+  };
+
+  const handleBulkDeleteStudents = async () => {
+    if (selectedStudentIds.length === 0) return;
+    if (!confirm(`Are you sure you want to permanently delete all ${selectedStudentIds.length} selected student(s) from the portal registry?\n\nThis action cannot be undone.`)) {
+      return;
+    }
+    setIsBulkDeleting(true);
+    try {
+      const res = await api.bulkDeleteStudents(selectedStudentIds);
+      if (res.success) {
+        setStudentMsg(`✓ ${res.removedCount || selectedStudentIds.length} student(s) removed successfully from registry.`);
+        setSelectedStudentIds([]);
+        if (onStudentAdded) onStudentAdded();
+      } else {
+        alert(res.message || 'Failed to delete selected students');
+      }
+    } catch (err) {
+      alert('Error deleting students: ' + err.message);
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
@@ -363,6 +434,16 @@ export default function FacultyPortal({
     facultyAuth?.name?.toLowerCase().includes('akshay') || 
     facultyAuth?.isAdmin
   );
+
+  const filteredStudents = students.filter(s => 
+    !studentSearchQuery ||
+    s.id.toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
+    s.name.toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
+    (s.phone && s.phone.includes(studentSearchQuery)) ||
+    (s.classBatch && s.classBatch.toLowerCase().includes(studentSearchQuery.toLowerCase())) ||
+    (s.stream && s.stream.toLowerCase().includes(studentSearchQuery.toLowerCase()))
+  );
+  const isAllFilteredSelected = filteredStudents.length > 0 && filteredStudents.every(s => selectedStudentIds.includes(s.id));
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
@@ -785,7 +866,7 @@ export default function FacultyPortal({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center flex-wrap gap-2">
                     <span className="font-mono text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1.5">
                       <Phone className="w-3.5 h-3.5 text-emerald-600" />
                       +91 {f.phone.slice(-10)}
@@ -800,6 +881,48 @@ export default function FacultyPortal({
                       <Send className="w-3 h-3" />
                       <span>Test</span>
                     </a>
+
+                    {isMasterAdmin && (
+                      f.id === 'FAC00' ? (
+                        <span 
+                          className="px-2.5 py-1 text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-xl"
+                          title="Primary Portal Administrator (Protected from deletion)"
+                        >
+                          👑 Primary Admin (Protected)
+                        </span>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNewFaculty({
+                                id: f.id,
+                                name: f.name,
+                                subject: f.subject,
+                                phone: f.phone.slice(-10),
+                                designation: f.designation || '',
+                                availableHours: f.availableHours || '4:00 PM - 8:00 PM'
+                              });
+                              setFacultyMsg(`Editing "${f.name}". Modify details and click Update Faculty.`);
+                            }}
+                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                            title={`Edit ${f.name} details`}
+                          >
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={deletingFacultyId === f.id}
+                            onClick={() => handleDeleteFaculty(f)}
+                            className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+                            title={`Remove ${f.name} from faculty registry`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                            <span>{deletingFacultyId === f.id ? 'Removing...' : 'Remove'}</span>
+                          </button>
+                        </div>
+                      )
+                    )}
                   </div>
                 </div>
               ))}
@@ -876,12 +999,26 @@ export default function FacultyPortal({
                 />
               </div>
 
-              <button
-                type="submit"
-                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
-              >
-                Save Faculty Contact
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                >
+                  {newFaculty.id ? 'Update Faculty Member' : 'Save Faculty Contact'}
+                </button>
+                {newFaculty.id && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewFaculty({ name: '', subject: 'Mathematics', phone: '', designation: '', availableHours: '4:00 PM - 8:00 PM' });
+                      setFacultyMsg('');
+                    }}
+                    className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
             </form>
           </div>
           ) : (
@@ -928,36 +1065,139 @@ export default function FacultyPortal({
               </div>
             </div>
 
+            {/* Notification message */}
+            {studentMsg && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between text-xs text-blue-900 font-semibold">
+                <span>{studentMsg}</span>
+                <button 
+                  type="button" 
+                  onClick={() => setStudentMsg('')} 
+                  className="text-blue-500 hover:text-blue-700 text-xs cursor-pointer ml-2"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {/* Bulk Selection Action Bar for Admin */}
+            {isMasterAdmin && selectedStudentIds.length > 0 && (
+              <div className="p-3 bg-rose-50 border-2 border-rose-300 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs shadow-2xs">
+                <div className="flex items-center gap-2 text-rose-900 font-bold">
+                  <span className="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs font-black">
+                    {selectedStudentIds.length}
+                  </span>
+                  <span>{selectedStudentIds.length} student{selectedStudentIds.length > 1 ? 's' : ''} selected</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStudentIds([])}
+                    className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl font-bold transition-colors cursor-pointer"
+                  >
+                    Deselect All
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isBulkDeleting}
+                    onClick={handleBulkDeleteStudents}
+                    className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{isBulkDeleting ? 'Deleting...' : `Delete Selected (${selectedStudentIds.length})`}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="overflow-x-auto max-h-[550px] overflow-y-auto">
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="sticky top-0 bg-slate-50 shadow-2xs">
+                <thead className="sticky top-0 bg-slate-50 shadow-2xs z-10">
                   <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px]">
+                    {isMasterAdmin && (
+                      <th className="py-2.5 px-3 w-9 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isAllFilteredSelected}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              const visibleIds = filteredStudents.map(s => s.id);
+                              setSelectedStudentIds(prev => Array.from(new Set([...prev, ...visibleIds])));
+                            } else {
+                              const visibleIdSet = new Set(filteredStudents.map(s => s.id));
+                              setSelectedStudentIds(prev => prev.filter(id => !visibleIdSet.has(id)));
+                            }
+                          }}
+                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer w-3.5 h-3.5 align-middle"
+                          title="Select all visible students"
+                        />
+                      </th>
+                    )}
                     <th className="py-2.5 px-3">Student ID</th>
                     <th className="py-2.5 px-3">Student Name</th>
                     <th className="py-2.5 px-3">Batch & Stream</th>
                     <th className="py-2.5 px-3">Parent Phone</th>
+                    {isMasterAdmin && (
+                      <th className="py-2.5 px-3 text-right">Action</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {students
-                    .filter(s => 
-                      !studentSearchQuery ||
-                      s.id.toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
-                      s.name.toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
-                      (s.phone && s.phone.includes(studentSearchQuery))
-                    )
-                    .map(s => (
-                      <tr key={s.id} className="hover:bg-slate-50">
-                        <td className="py-2.5 px-3 font-mono font-bold text-blue-900">{s.id}</td>
-                        <td className="py-2.5 px-3 font-semibold text-slate-800">{s.name}</td>
-                        <td className="py-2.5 px-3 text-slate-600">
-                          {s.classBatch} • <span className="text-slate-500">{s.stream}</span>
-                        </td>
-                        <td className="py-2.5 px-3 font-mono text-slate-500 text-[11px]">
-                          {s.phone || '—'}
-                        </td>
-                      </tr>
-                    ))}
+                  {filteredStudents.length === 0 ? (
+                    <tr>
+                      <td colSpan={isMasterAdmin ? 6 : 4} className="py-8 text-center text-slate-400 text-xs">
+                        No students found matching "{studentSearchQuery}".
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredStudents.map(s => {
+                      const isSelected = selectedStudentIds.includes(s.id);
+                      const isDeleting = deletingStudentId === s.id;
+                      return (
+                        <tr 
+                          key={s.id} 
+                          className={`hover:bg-slate-50 transition-colors ${isSelected ? 'bg-blue-50/50 font-medium' : ''}`}
+                        >
+                          {isMasterAdmin && (
+                            <td className="py-2.5 px-3 text-center">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedStudentIds(prev => [...prev, s.id]);
+                                  } else {
+                                    setSelectedStudentIds(prev => prev.filter(id => id !== s.id));
+                                  }
+                                }}
+                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer w-3.5 h-3.5 align-middle"
+                              />
+                            </td>
+                          )}
+                          <td className="py-2.5 px-3 font-mono font-bold text-blue-900">{s.id}</td>
+                          <td className="py-2.5 px-3 font-semibold text-slate-800">{s.name}</td>
+                          <td className="py-2.5 px-3 text-slate-600">
+                            {s.classBatch} • <span className="text-slate-500">{s.stream}</span>
+                          </td>
+                          <td className="py-2.5 px-3 font-mono text-slate-500 text-[11px]">
+                            {s.phone || '—'}
+                          </td>
+                          {isMasterAdmin && (
+                            <td className="py-2.5 px-3 text-right">
+                              <button
+                                type="button"
+                                disabled={isDeleting}
+                                onClick={() => handleDeleteStudent(s)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center justify-center"
+                                title={`Remove student ${s.name} (${s.id})`}
+                              >
+                                <Trash2 className="w-4 h-4 text-rose-500" />
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>

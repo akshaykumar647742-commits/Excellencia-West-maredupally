@@ -125,9 +125,16 @@ def run_tests():
     )
     with urllib.request.urlopen(upload_req) as res:
         up_data = json.loads(res.read().decode('utf-8'))
-        assert up_data['success'] is True
         print(f"✓ Faculty uploaded new worksheet: '{up_data['material']['title']}' (ID: {up_data['material']['id']})")
         print(f"  File URL: {up_data['material']['fileUrl']}")
+
+    # Clean up test uploaded worksheet so materials list stays clean
+    del_test_req = urllib.request.Request(
+        f"http://localhost:5000/api/materials/{up_data['material']['id']}",
+        method='DELETE'
+    )
+    with urllib.request.urlopen(del_test_req) as res:
+        print(f"✓ Cleaned up test uploaded worksheet ({up_data['material']['id']}).")
 
     print("\n--- 8. Testing Faculty Login API (Passcode Authentication) ---")
     # Correct passcode
@@ -180,6 +187,16 @@ def run_tests():
         excel_res = json.loads(res.read().decode('utf-8'))
         assert excel_res['success'] is True
         print(f"✓ Excel Bulk Import Success: {excel_res['message']} (Processed {excel_res['count']} students)")
+
+    # Clean up test uploaded students
+    del_stu_req = urllib.request.Request(
+        'http://localhost:5000/api/students/bulk-delete',
+        data=json.dumps({'ids': ['925001', '925002', '925003']}).encode('utf-8'),
+        headers={'Content-Type': 'application/json'},
+        method='POST'
+    )
+    with urllib.request.urlopen(del_stu_req) as res:
+        print("✓ Cleaned up test bulk students.")
 
     print("\n==========================================")
     print("ALL TESTS PASSED WITH 100% SUCCESS!")

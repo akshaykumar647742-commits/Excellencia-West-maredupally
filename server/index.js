@@ -247,6 +247,43 @@ app.post('/api/students', (req, res) => {
   res.status(201).json({ success: true, student: newStudent });
 });
 
+// Delete student by ID
+app.delete('/api/students/:id', (req, res) => {
+  const { id } = req.params;
+  const cleanId = decodeURIComponent(id).trim().toUpperCase();
+  let students = readJSON('students.json', []);
+  const initialCount = students.length;
+  students = students.filter(s => s.id.toUpperCase() !== cleanId);
+
+  if (students.length === initialCount) {
+    return res.status(404).json({ success: false, message: `Student with ID ${cleanId} not found` });
+  }
+
+  writeJSON('students.json', students);
+  res.json({ success: true, message: `Student ${cleanId} removed successfully` });
+});
+
+// Bulk delete students by array of IDs
+app.post('/api/students/bulk-delete', (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ success: false, message: 'No student IDs provided for deletion' });
+  }
+
+  const targetIds = new Set(ids.map(i => String(i).trim().toUpperCase()));
+  let students = readJSON('students.json', []);
+  const initialCount = students.length;
+  students = students.filter(s => !targetIds.has(s.id.toUpperCase()));
+  const removedCount = initialCount - students.length;
+
+  writeJSON('students.json', students);
+  res.json({ 
+    success: true, 
+    removedCount, 
+    message: `Successfully removed ${removedCount} student(s) from registry.` 
+  });
+});
+
 // Download sample Excel template for bulk student upload
 app.get('/api/students/sample-template', (req, res) => {
   const sampleData = [
@@ -438,8 +475,18 @@ app.post('/api/faculty', (req, res) => {
 // Delete faculty
 app.delete('/api/faculty/:id', (req, res) => {
   const { id } = req.params;
+  if (id === 'FAC00') {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Primary Administrator (Prof. Akshay) cannot be removed.' 
+    });
+  }
   let facultyList = readJSON('faculty.json', []);
+  const initialCount = facultyList.length;
   facultyList = facultyList.filter(f => f.id !== id);
+  if (facultyList.length === initialCount) {
+    return res.status(404).json({ success: false, message: 'Faculty member not found' });
+  }
   writeJSON('faculty.json', facultyList);
   res.json({ success: true, message: 'Faculty removed successfully' });
 });
