@@ -182,15 +182,19 @@ export default function AskDoubtModal({
                   Your Doubt Has Been Submitted!
                 </h4>
                 <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto mt-1 leading-relaxed">
-                  Teacher <strong className="text-slate-900">{submittedDoubt?.facultyName}</strong> has received your question in their Faculty Portal. Once answered, the teacher's solution will appear directly in your dashboard.
+                  Teacher <strong className="text-slate-900">{submittedDoubt?.facultyName}</strong> has received your question in their Faculty Portal. An automated email notification from the website has been dispatched to the faculty member. Once answered, the solution will appear directly in your dashboard.
                 </p>
               </div>
 
               {/* Summary Card */}
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left text-xs space-y-2 max-w-lg mx-auto">
                 <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                  <span className="text-slate-500 font-medium">Subject & Teacher:</span>
-                  <span className="font-bold text-slate-800">{submittedDoubt?.subject} • {submittedDoubt?.facultyName}</span>
+                  <span className="text-slate-500 font-medium">Assigned Teacher:</span>
+                  <span className="font-bold text-slate-800">{submittedDoubt?.facultyName} ({submittedDoubt?.subject})</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                  <span className="text-slate-500 font-medium">Email Notification:</span>
+                  <span className="font-bold text-emerald-700">✓ Sent from Website to Faculty Inbox</span>
                 </div>
                 <div className="flex justify-between items-center border-b border-slate-200 pb-2">
                   <span className="text-slate-500 font-medium">Topic / Reference:</span>

@@ -1,0 +1,17 @@
+[
+  {
+    "id": "notif-1789540647114",
+    "doubtId": "doubt-1789540647106",
+    "recipientEmail": "k.venkateshrao@excellencia.edu.in",
+    "recipientName": "K. Venkatesh Rao",
+    "facultyId": "FAC01",
+    "studentName": "Aarav Sharma",
+    "studentId": "EXC2026-001",
+    "subject": "Mathematics",
+    "topic": "Definite Integrals",
+    "timestamp": "2026-09-16T06:37:27.114Z",
+    "status": "logged_ready_to_send",
+    "error": null,
+    "note": "SMTP_USER/SMTP_PASS not configured in environment. Notification logged in system for delivery."
+  }
+]

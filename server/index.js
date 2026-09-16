@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const XLSX = require('xlsx');
+const { sendDoubtNotificationEmail, readNotificationLogs, isSmtpConfigured } = require('./emailService');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -688,14 +689,21 @@ app.post('/api/doubts', (req, res) => {
     return res.status(400).json({ success: false, message: 'Question content is required' });
   }
 
+  const facultyList = readJSON('faculty.json', []);
+  const matchedFaculty = facultyList.find(f => 
+    f.id === facultyId || 
+    (f.name && facultyName && f.name.toLowerCase() === facultyName.toLowerCase())
+  );
+
   const doubts = readJSON('doubts_log.json', []);
   const newDoubt = {
     id: `doubt-${Date.now()}`,
     studentId: studentId ? String(studentId).trim().toUpperCase() : 'STUDENT',
     studentName: studentName ? studentName.trim() : 'Student',
     classBatch: classBatch || 'Class 11/12',
-    facultyId: facultyId || '',
-    facultyName: facultyName || 'Faculty',
+    facultyId: matchedFaculty ? matchedFaculty.id : (facultyId || ''),
+    facultyName: matchedFaculty ? matchedFaculty.name : (facultyName || 'Faculty Member'),
+    facultyEmail: matchedFaculty?.email || '',
     subject: subject || 'General',
     topic: topic ? topic.trim() : 'General Doubt',
     question: question.trim(),
@@ -703,29 +711,45 @@ app.post('/api/doubts', (req, res) => {
     status: 'pending',
     answer: null,
     answeredBy: null,
-    answeredAt: null
+    answeredAt: null,
+    notificationStatus: matchedFaculty?.email ? 'sent_to_faculty' : 'no_email_on_file'
   };
 
   doubts.unshift(newDoubt);
   writeJSON('doubts_log.json', doubts.slice(0, 1000));
+
+  // Trigger automated email notification from website to faculty member
+  if (matchedFaculty) {
+    const portalBaseUrl = `${req.protocol}://${req.get('host')}`;
+    sendDoubtNotificationEmail({ faculty: matchedFaculty, doubt: newDoubt, portalBaseUrl })
+      .catch(err => console.error('[EMAIL NOTIFICATION ERROR]:', err));
+  }
+
   res.status(201).json({ 
     success: true, 
     doubt: newDoubt, 
-    message: 'Doubt submitted successfully! Your faculty will review and answer it soon.' 
+    message: 'Doubt submitted successfully! Your faculty has been notified by email.' 
   });
 });
 
 // Backwards compatibility for /api/doubts/log
 app.post('/api/doubts/log', (req, res) => {
   const { studentId, studentName, classBatch, facultyId, facultyName, subject, topic, question } = req.body;
+  const facultyList = readJSON('faculty.json', []);
+  const matchedFaculty = facultyList.find(f => 
+    f.id === facultyId || 
+    (f.name && facultyName && f.name.toLowerCase() === facultyName.toLowerCase())
+  );
+
   const doubts = readJSON('doubts_log.json', []);
   const newDoubt = {
     id: `doubt-${Date.now()}`,
     studentId: studentId ? String(studentId).trim().toUpperCase() : 'Anonymous',
     studentName: studentName || 'Student',
     classBatch: classBatch || 'Class 11/12',
-    facultyId,
-    facultyName,
+    facultyId: matchedFaculty ? matchedFaculty.id : (facultyId || ''),
+    facultyName: matchedFaculty ? matchedFaculty.name : (facultyName || 'Faculty Member'),
+    facultyEmail: matchedFaculty?.email || '',
     subject,
     topic,
     question,
@@ -733,11 +757,34 @@ app.post('/api/doubts/log', (req, res) => {
     status: 'pending',
     answer: null,
     answeredBy: null,
-    answeredAt: null
+    answeredAt: null,
+    notificationStatus: matchedFaculty?.email ? 'sent_to_faculty' : 'no_email_on_file'
   };
   doubts.unshift(newDoubt);
   writeJSON('doubts_log.json', doubts.slice(0, 1000));
+
+  if (matchedFaculty) {
+    const portalBaseUrl = `${req.protocol}://${req.get('host')}`;
+    sendDoubtNotificationEmail({ faculty: matchedFaculty, doubt: newDoubt, portalBaseUrl })
+      .catch(err => console.error('[EMAIL NOTIFICATION ERROR]:', err));
+  }
+
   res.json({ success: true, doubt: newDoubt });
+});
+
+// Notification status and logs routes
+app.get('/api/notifications/logs', (req, res) => {
+  const logs = readNotificationLogs();
+  res.json(logs);
+});
+
+app.get('/api/notifications/status', (req, res) => {
+  const logs = readNotificationLogs();
+  res.json({
+    smtpConfigured: isSmtpConfigured(),
+    totalNotificationsSent: logs.length,
+    recentLogs: logs.slice(0, 10)
+  });
 });
 
 // Faculty submits answer to a doubt

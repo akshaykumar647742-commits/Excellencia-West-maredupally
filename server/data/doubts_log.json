@@ -1,5 +1,21 @@
 [
   {
+    "id": "doubt-1789539303539",
+    "studentId": "EXM101",
+    "studentName": "Aarav Sharma",
+    "classBatch": "Class 11 - JEE Batch A",
+    "facultyId": "FAC00",
+    "facultyName": "Akshay",
+    "subject": "Physics",
+    "topic": "Electromagnetic Induction",
+    "question": "Sir, how does Lenz's law relate to the conservation of energy in electromagnetic induction?",
+    "timestamp": "2026-09-16T06:15:03.540Z",
+    "status": "pending",
+    "answer": null,
+    "answeredBy": null,
+    "answeredAt": null
+  },
+  {
     "id": "doubt-1789370706691",
     "studentId": "EXM101",
     "studentName": "Aarav Sharma",

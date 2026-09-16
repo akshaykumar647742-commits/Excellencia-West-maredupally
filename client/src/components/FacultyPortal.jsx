@@ -25,7 +25,8 @@ import {
   HelpCircle,
   RefreshCw,
   Edit3,
-  Check
+  Check,
+  Mail
 } from 'lucide-react';
 import { api } from '../services/api';
 import { getProtectedFileUrl } from '../utils/authUrl';
@@ -51,6 +52,14 @@ export default function FacultyPortal({
       return null;
     }
   });
+
+  // Master Admin check (Restricted to Akshay / FAC00)
+  const isMasterAdmin = Boolean(
+    facultyAuth?.id === 'FAC00' || 
+    facultyAuth?.name?.toLowerCase().includes('akshay') || 
+    facultyAuth?.isAdmin
+  );
+
   const [loginPasscode, setLoginPasscode] = useState('');
   const [selectedFacultyLoginId, setSelectedFacultyLoginId] = useState(facultyList[0]?.id || '');
   const [loginLoading, setLoginLoading] = useState(false);
@@ -107,6 +116,7 @@ export default function FacultyPortal({
     name: '',
     subject: 'Mathematics',
     phone: '',
+    email: '',
     designation: '',
     availableHours: '4:00 PM - 8:00 PM'
   });
@@ -135,6 +145,7 @@ export default function FacultyPortal({
   // Doubts Inbox state
   const [doubts, setDoubts] = useState([]);
   const [loadingDoubts, setLoadingDoubts] = useState(false);
+  const [adminViewAllDoubts, setAdminViewAllDoubts] = useState(false);
   const [doubtStatusFilter, setDoubtStatusFilter] = useState('all'); // 'all' | 'pending' | 'answered'
   const [doubtSubjectFilter, setDoubtSubjectFilter] = useState('all');
   const [answeringDoubtId, setAnsweringDoubtId] = useState(null);
@@ -142,10 +153,18 @@ export default function FacultyPortal({
   const [submittingAnswer, setSubmittingAnswer] = useState(false);
   const [doubtsActionMsg, setDoubtsActionMsg] = useState('');
 
-  const loadDoubts = async () => {
+  const loadDoubts = async (viewAllOverride = null) => {
     try {
       setLoadingDoubts(true);
-      const data = await api.getDoubts();
+      const shouldViewAll = viewAllOverride !== null ? viewAllOverride : adminViewAllDoubts;
+      const params = {};
+      // If NOT master admin, OR if master admin is viewing their own doubts, strictly scope to facultyAuth.id
+      if (!isMasterAdmin || !shouldViewAll) {
+        if (facultyAuth?.id) {
+          params.facultyId = facultyAuth.id;
+        }
+      }
+      const data = await api.getDoubts(params);
       setDoubts(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Error fetching doubts in faculty portal:', err);
@@ -158,7 +177,7 @@ export default function FacultyPortal({
     if (facultyAuth) {
       loadDoubts();
     }
-  }, [facultyAuth]);
+  }, [facultyAuth, adminViewAllDoubts]);
 
   const handleStartAnswering = (doubt) => {
     setAnsweringDoubtId(doubt.id);
@@ -323,8 +342,8 @@ export default function FacultyPortal({
     try {
       const res = await api.saveFaculty(newFaculty);
       if (res.success) {
-        setFacultyMsg(newFaculty.id ? 'Faculty details updated successfully!' : 'Faculty WhatsApp contact saved successfully!');
-        setNewFaculty({ name: '', subject: 'Mathematics', phone: '', designation: '', availableHours: '4:00 PM - 8:00 PM' });
+        setFacultyMsg(newFaculty.id ? 'Faculty details updated successfully!' : 'Faculty profile & email saved successfully!');
+        setNewFaculty({ name: '', subject: 'Mathematics', phone: '', email: '', designation: '', availableHours: '4:00 PM - 8:00 PM' });
         onFacultyUpdated();
       }
     } catch (err) {
@@ -512,13 +531,6 @@ export default function FacultyPortal({
       </div>
     );
   }
-
-  // Master Admin check (Restricted to Prof. Akshay)
-  const isMasterAdmin = Boolean(
-    facultyAuth?.id === 'FAC00' || 
-    facultyAuth?.name?.toLowerCase().includes('akshay') || 
-    facultyAuth?.isAdmin
-  );
 
   const filteredStudents = students.filter(s => 
     !studentSearchQuery ||
@@ -966,6 +978,16 @@ export default function FacultyPortal({
                       <p className="text-xs text-blue-700 font-medium">
                         {f.subject} • {f.designation || f.department}
                       </p>
+                      {f.email ? (
+                        <p className="text-[11px] text-blue-800 font-mono flex items-center gap-1 mt-0.5">
+                          <Mail className="w-3 h-3 text-blue-600" />
+                          <span>{f.email}</span>
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-slate-400 italic mt-0.5">
+                          No notification email set
+                        </p>
+                      )}
                       <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
                         <Clock className="w-3 h-3 text-slate-400" />
                         Doubts Hours: {f.availableHours || '4:00 PM - 8:00 PM'}
@@ -1007,6 +1029,7 @@ export default function FacultyPortal({
                                 name: f.name,
                                 subject: f.subject,
                                 phone: f.phone.slice(-10),
+                                email: f.email || '',
                                 designation: f.designation || '',
                                 availableHours: f.availableHours || '4:00 PM - 8:00 PM'
                               });
@@ -1042,7 +1065,7 @@ export default function FacultyPortal({
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-base font-bold text-slate-900">Add / Update Faculty</h3>
-                  <p className="text-xs text-slate-500">Configure phone number for WhatsApp doubts.</p>
+                  <p className="text-xs text-slate-500">Configure contact numbers and email addresses for automated doubt notifications.</p>
                 </div>
                 <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px] uppercase border border-amber-300">
                   Admin Only
@@ -1081,6 +1104,21 @@ export default function FacultyPortal({
                   <option value="Biology">Biology</option>
                   <option value="English">English</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Faculty Email Address (For Doubt Alerts) *</label>
+                <input
+                  type="email"
+                  placeholder="e.g. teacher@excellencia.edu.in or personal gmail"
+                  value={newFaculty.email}
+                  onChange={(e) => setNewFaculty({ ...newFaculty, email: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono"
+                  required
+                />
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  The website automatically sends an email notification to this address whenever a student submits a doubt for this teacher.
+                </p>
               </div>
 
               <div>
@@ -1505,7 +1543,7 @@ export default function FacultyPortal({
             </div>
 
             <button
-              onClick={loadDoubts}
+              onClick={() => loadDoubts()}
               disabled={loadingDoubts}
               className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors self-start md:self-auto"
             >
@@ -1513,6 +1551,70 @@ export default function FacultyPortal({
               <span>Refresh Doubts</span>
             </button>
           </div>
+
+          {/* Privacy Scoping & Oversight Banner */}
+          {isMasterAdmin ? (
+            <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50/50 border border-amber-200 rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-2xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+                  👑
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900">Administrator Doubts Scope</h4>
+                  <p className="text-slate-600 text-[11px]">
+                    Switch between your personal assigned doubts and campus-wide oversight.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-amber-200 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAdminViewAllDoubts(false);
+                    loadDoubts(false);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
+                    !adminViewAllDoubts
+                      ? 'bg-amber-500 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  My Doubts ({doubts.filter(d => d.facultyId === facultyAuth?.id).length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAdminViewAllDoubts(true);
+                    loadDoubts(true);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
+                    adminViewAllDoubts
+                      ? 'bg-blue-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  All Faculty Doubts ({doubts.length})
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-900 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                  🔒
+                </div>
+                <div>
+                  <p className="font-bold text-blue-950">Faculty Privacy Active</p>
+                  <p className="text-blue-700 text-[11px]">
+                    Showing doubts submitted specifically to <strong>{facultyAuth?.name}</strong>. Doubts directed to other faculty members are private and hidden from your account.
+                  </p>
+                </div>
+              </div>
+              <span className="hidden sm:inline-block px-3 py-1 bg-white text-blue-900 rounded-xl font-bold border border-blue-200 text-[11px]">
+                {doubts.length} Assigned {doubts.length === 1 ? 'Doubt' : 'Doubts'}
+              </span>
+            </div>
+          )}
 
           {/* Action Message Banner */}
           {doubtsActionMsg && (
@@ -1644,7 +1746,17 @@ export default function FacultyPortal({
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {doubt.notificationStatus === 'sent_to_faculty' && (
+                            <span 
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200"
+                              title={`Automated website email notification sent to ${doubt.facultyEmail || 'teacher'}`}
+                            >
+                              <Mail className="w-3 h-3 text-emerald-600" />
+                              <span>Email Alert Sent</span>
+                            </span>
+                          )}
+
                           {isPending ? (
                             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
                               <Clock className="w-3.5 h-3.5 text-amber-600" />
@@ -1687,8 +1799,19 @@ export default function FacultyPortal({
                                   ID: {doubt.studentId}
                                 </span>
                               </div>
-                              <p className="text-xs text-slate-500 mt-0.5">
-                                {doubt.classBatch || 'Class 11/12'} • Assigned Teacher: <strong className="text-slate-700">{doubt.facultyName}</strong>
+                              <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                                <span>{doubt.classBatch || 'Class 11/12'}</span>
+                                <span>•</span>
+                                <span>Assigned to: <strong className="text-slate-800">{doubt.facultyName}</strong></span>
+                                {doubt.facultyEmail && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-blue-700 font-mono text-[11px] flex items-center gap-0.5">
+                                      <Mail className="w-3 h-3 text-blue-600" />
+                                      {doubt.facultyEmail}
+                                    </span>
+                                  </>
+                                )}
                               </p>
                             </div>
                           </div>
