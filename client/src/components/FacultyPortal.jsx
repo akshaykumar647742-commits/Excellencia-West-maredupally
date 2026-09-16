@@ -2207,9 +2207,9 @@ export default function FacultyPortal({
                         onClick={() => {
                           setEmailConfig({
                             ...emailConfig,
-                            smtpHost: 'smtp-relay.brevo.com',
-                            smtpPort: 587,
-                            smtpSecure: false
+                            smtpHost: 'api.brevo.com',
+                            smtpPort: 443,
+                            smtpSecure: true
                           });
                         }}
                         className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-1 ${
@@ -2219,8 +2219,8 @@ export default function FacultyPortal({
                         }`}
                       >
                         <span className="text-base">🚀</span>
-                        <span>Brevo (Free)</span>
-                        <span className="text-[10px] font-normal opacity-80">No Google Req.</span>
+                        <span>Brevo API (Free)</span>
+                        <span className="text-[10px] font-normal opacity-80">Render Compatible</span>
                       </button>
 
                       <button
@@ -2316,7 +2316,7 @@ export default function FacultyPortal({
                     <div className="flex items-center justify-between mb-1">
                       <label className="block text-xs font-bold text-slate-700">
                         {emailConfig.smtpHost.includes('brevo') 
-                          ? 'Brevo Master SMTP Key *' 
+                          ? 'Brevo API Key (starts with xkeysib-) *' 
                           : emailConfig.smtpHost.includes('gmail') 
                             ? 'Google 16-Character App Password *' 
                             : 'SMTP Password / Master Key *'}
@@ -2339,7 +2339,7 @@ export default function FacultyPortal({
                           emailConfig.hasPassword 
                             ? '•••••••••••••••• (Key Saved - leave blank to keep)' 
                             : emailConfig.smtpHost.includes('brevo')
-                              ? 'Paste your Brevo SMTP Master Key (e.g. xsmtpsib-...)'
+                              ? 'Paste your Brevo API Key (starts with xkeysib-...)'
                               : emailConfig.smtpHost.includes('gmail')
                                 ? '16-character Google App Password (e.g. abcd efgh ijkl mnop)'
                                 : 'Enter your email SMTP password'
@@ -2366,48 +2366,36 @@ export default function FacultyPortal({
                           <div className="flex items-start justify-between gap-2">
                             <h4 className="font-bold flex items-center gap-1.5 text-blue-900">
                               <Sparkles className="w-4 h-4 text-blue-700 flex-shrink-0" />
-                              <span>Recommended Solution: Brevo Free SMTP (No Google Needed)</span>
+                              <span>Brevo HTTPS API (Works 100% on Render Free Cloud)</span>
                             </h4>
                             <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded-full text-[10px]">
                               100% Free Forever
                             </span>
                           </div>
-                          <p className="text-slate-600 text-[11px] leading-relaxed">
-                            If Google App Passwords are disabled on your account, Brevo allows your website to dispatch up to 300 free notifications/day with zero restrictions.
-                          </p>
+                          <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-[11px]">
+                            <strong>💡 Why use Brevo API Key instead of SMTP?</strong> Render Free tier blocks standard SMTP ports (587 & 465), causing "Connection timeout". The <strong>Brevo API</strong> connects securely over HTTPS (Port 443) which Render never blocks!
+                          </div>
                           <ol className="list-decimal list-inside space-y-1.5 text-slate-700 text-[11px] pl-1 font-medium">
                             <li>
-                              Sign up for a free account at{' '}
+                              Open your Brevo <strong>API Keys</strong> tab directly:{' '}
                               <a
-                                href="https://onboarding.brevo.com/account/register"
+                                href="https://app.brevo.com/settings/keys/api"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-blue-700 font-bold underline inline-flex items-center gap-0.5"
                               >
-                                <span>brevo.com (free registration)</span>
+                                <span>app.brevo.com/settings/keys/api</span>
                                 <ExternalLink className="w-3 h-3" />
                               </a>
                             </li>
                             <li>
-                              Open your Brevo SMTP & API page:{' '}
-                              <a
-                                href="https://app.brevo.com/settings/keys/smtp"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-700 font-bold underline inline-flex items-center gap-0.5"
-                              >
-                                <span>app.brevo.com/settings/keys/smtp</span>
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
+                              Click <strong>"Generate a new API key"</strong>, name it <code className="bg-blue-100 px-1.5 py-0.5 rounded text-blue-900 font-mono">Excellencia Portal</code>, and click <strong>Generate</strong>.
                             </li>
                             <li>
-                              Click <strong>"Generate a new SMTP key"</strong>, name it <code className="bg-blue-100 px-1.5 py-0.5 rounded text-blue-900 font-mono">Excellencia Portal</code>, and click <strong>Generate</strong>.
+                              Copy the generated key (starts with <code className="bg-blue-100 px-1.5 py-0.5 rounded text-blue-900 font-mono">xkeysib-...</code>) and paste it into the <strong>Brevo API Key</strong> box above.
                             </li>
                             <li>
-                              Copy the generated key (e.g. <code className="bg-blue-100 px-1.5 py-0.5 rounded text-blue-900 font-mono">xsmtpsib-...</code>) and paste it into the <strong>Brevo Master SMTP Key</strong> field above.
-                            </li>
-                            <li>
-                              Enter your Brevo login email in the <strong>Sender Email Address</strong> field above and click <strong>Save Email Settings</strong>!
+                              Make sure your <strong>Brevo Account Email</strong> is entered above, then click <strong>Save Email Settings</strong>!
                             </li>
                           </ol>
                         </>

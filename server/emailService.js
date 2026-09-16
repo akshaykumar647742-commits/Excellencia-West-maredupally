@@ -1,6 +1,72 @@
 const nodemailer = require('nodemailer');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
+
+// Send email via Brevo REST API (HTTPS port 443 - 100% compatible with Render free tier)
+function sendBrevoApiEmail({ apiKey, senderEmail, senderName, recipientEmail, recipientName, subject, htmlContent }) {
+  return new Promise((resolve) => {
+    const payload = JSON.stringify({
+      sender: {
+        name: senderName || 'Excellencia Academic Portal',
+        email: senderEmail
+      },
+      to: [
+        {
+          email: recipientEmail,
+          name: recipientName || recipientEmail
+        }
+      ],
+      subject: subject,
+      htmlContent: htmlContent
+    });
+
+    const options = {
+      hostname: 'api.brevo.com',
+      port: 443,
+      path: '/v3/smtp/email',
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': apiKey,
+        'content-type': 'application/json',
+        'content-length': Buffer.byteLength(payload)
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(body || '{}');
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve({ success: true, messageId: parsed.messageId });
+          } else {
+            resolve({ 
+              success: false, 
+              error: parsed.message || `Brevo API returned error (${res.statusCode}): ${body}` 
+            });
+          }
+        } catch (e) {
+          resolve({ success: false, error: `Invalid response from Brevo: ${body}` });
+        }
+      });
+    });
+
+    req.on('error', (err) => {
+      resolve({ success: false, error: `Brevo API connection error: ${err.message}` });
+    });
+
+    req.setTimeout(15000, () => {
+      req.destroy();
+      resolve({ success: false, error: 'Brevo API request timed out' });
+    });
+
+    req.write(payload);
+    req.end();
+  });
+}
 
 const notificationsLogPath = path.join(__dirname, 'data', 'email_notifications.json');
 const emailConfigPath = path.join(__dirname, 'data', 'email_config.json');
@@ -116,7 +182,7 @@ async function sendTestEmail({ recipientEmail }) {
   if (!config.isConfigured) {
     return {
       success: false,
-      error: 'SMTP sender credentials not configured. Please enter your Sender Email and 16-character Google App Password first.'
+      error: 'Sender credentials not configured. Please enter your Sender Email and Brevo API Key / Google App Password.'
     };
   }
 
@@ -127,17 +193,7 @@ async function sendTestEmail({ recipientEmail }) {
     };
   }
 
-  try {
-    const transporter = getTransporter();
-    const senderAddress = config.smtpFrom.includes('<') 
-      ? config.smtpFrom 
-      : `"${config.smtpFrom || 'Excellencia Academic Portal'}" <${config.smtpUser}>`;
-
-    const info = await transporter.sendMail({
-      from: senderAddress,
-      to: recipientEmail,
-      subject: '✅ Excellencia Portal - Live Email Notification Test Successful!',
-      html: `
+  const testHtml = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -160,8 +216,8 @@ async function sendTestEmail({ recipientEmail }) {
 
       <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px;">
         <tr style="border-bottom: 1px solid #f1f5f9;">
-          <td style="padding: 8px 0; color: #64748b;">SMTP Host:</td>
-          <td style="padding: 8px 0; font-weight: 700; color: #0f172a;">${config.smtpHost}:${config.smtpPort}</td>
+          <td style="padding: 8px 0; color: #64748b;">Method / Host:</td>
+          <td style="padding: 8px 0; font-weight: 700; color: #0f172a;">${config.smtpPass.startsWith('xkeysib-') ? 'Brevo REST API (HTTPS Port 443)' : `${config.smtpHost}:${config.smtpPort}`}</td>
         </tr>
         <tr style="border-bottom: 1px solid #f1f5f9;">
           <td style="padding: 8px 0; color: #64748b;">Sender Account:</td>
@@ -184,7 +240,63 @@ async function sendTestEmail({ recipientEmail }) {
   </div>
 </body>
 </html>
-      `
+  `;
+
+  // Branch 1: If Brevo API key is provided, use HTTPS REST API (Render free tier friendly!)
+  if (config.smtpPass.startsWith('xkeysib-') || config.smtpHost === 'api.brevo.com' || (config.smtpHost.includes('brevo') && config.smtpPass.startsWith('xkeysib-'))) {
+    try {
+      const result = await sendBrevoApiEmail({
+        apiKey: config.smtpPass,
+        senderEmail: config.smtpUser,
+        senderName: config.smtpFrom || 'Excellencia Academic Portal',
+        recipientEmail,
+        recipientName: 'Faculty Admin (Test)',
+        subject: '✅ Excellencia Portal - Live Email Notification Test Successful!',
+        htmlContent: testHtml
+      });
+
+      if (!result.success) {
+        return { success: false, error: result.error };
+      }
+
+      const testLog = {
+        id: `test-${Date.now()}`,
+        doubtId: 'test-connection',
+        recipientEmail,
+        recipientName: 'Faculty Admin (Test)',
+        studentName: 'System Test',
+        studentId: 'SYS-TEST',
+        subject: 'Portal Connection Test (Brevo API)',
+        topic: 'Live Verification',
+        timestamp: new Date().toISOString(),
+        status: 'sent',
+        messageId: result.messageId,
+        error: null
+      };
+      writeNotificationLog(testLog);
+
+      return {
+        success: true,
+        messageId: result.messageId,
+        message: `Test email successfully sent to ${recipientEmail} via Brevo HTTPS API!`
+      };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  // Branch 2: Standard SMTP
+  try {
+    const transporter = getTransporter();
+    const senderAddress = config.smtpFrom.includes('<') 
+      ? config.smtpFrom 
+      : `"${config.smtpFrom || 'Excellencia Academic Portal'}" <${config.smtpUser}>`;
+
+    const info = await transporter.sendMail({
+      from: senderAddress,
+      to: recipientEmail,
+      subject: '✅ Excellencia Portal - Live Email Notification Test Successful!',
+      html: testHtml
     });
 
     // Log the test
@@ -195,7 +307,7 @@ async function sendTestEmail({ recipientEmail }) {
       recipientName: 'Faculty Admin (Test)',
       studentName: 'System Test',
       studentId: 'SYS-TEST',
-      subject: 'Portal Connection Test',
+      subject: 'Portal Connection Test (SMTP)',
       topic: 'Live Verification',
       timestamp: new Date().toISOString(),
       status: 'sent',
@@ -211,9 +323,13 @@ async function sendTestEmail({ recipientEmail }) {
     };
   } catch (err) {
     console.error('Test email error:', err);
+    let errMsg = err.message || 'Failed to send test email. Please check your credentials.';
+    if (errMsg.toLowerCase().includes('timeout') || err.code === 'ETIMEDOUT') {
+      errMsg = 'Connection timed out on SMTP port. (Note: Render Free tier blocks SMTP ports 25, 465, & 587). Please use your Brevo API Key (starts with xkeysib- from the "API Keys" tab in Brevo) which connects over HTTPS (port 443) and is 100% unblocked on Render!';
+    }
     return {
       success: false,
-      error: err.message || 'Failed to send test email. Please check your credentials.'
+      error: errMsg
     };
   }
 }
@@ -356,6 +472,40 @@ async function sendDoubtNotificationEmail({ faculty, doubt, portalBaseUrl }) {
 </body>
 </html>
   `;
+
+  // If Brevo API key is configured, send via HTTPS REST API (Render free tier friendly!)
+  if (config.smtpPass.startsWith('xkeysib-') || config.smtpHost === 'api.brevo.com' || (config.smtpHost.includes('brevo') && config.smtpPass.startsWith('xkeysib-'))) {
+    try {
+      const result = await sendBrevoApiEmail({
+        apiKey: config.smtpPass,
+        senderEmail: config.smtpUser,
+        senderName: config.smtpFrom || 'Excellencia Academic Portal',
+        recipientEmail,
+        recipientName,
+        subject: emailSubject,
+        htmlContent: htmlContent
+      });
+
+      if (result.success) {
+        logEntry.status = 'sent';
+        logEntry.messageId = result.messageId;
+        console.log(`[EMAIL NOTIFICATION SENT VIA BREVO API] To: ${recipientEmail}, MessageId: ${result.messageId}`);
+        writeNotificationLog(logEntry);
+        return { success: true, mode: 'brevo_api', messageId: result.messageId, log: logEntry };
+      } else {
+        logEntry.status = 'failed';
+        logEntry.error = result.error;
+        console.error(`[EMAIL NOTIFICATION ERROR BREVO API] Failed to send to ${recipientEmail}:`, result.error);
+        writeNotificationLog(logEntry);
+        return { success: false, error: result.error, log: logEntry };
+      }
+    } catch (err) {
+      logEntry.status = 'failed';
+      logEntry.error = err.message;
+      writeNotificationLog(logEntry);
+      return { success: false, error: err.message, log: logEntry };
+    }
+  }
 
   const transporter = getTransporter();
 
