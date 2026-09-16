@@ -2196,32 +2196,130 @@ export default function FacultyPortal({
                     </div>
                   )}
 
+                  {/* Provider Preset Selector */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Select Email Service Provider
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEmailConfig({
+                            ...emailConfig,
+                            smtpHost: 'smtp-relay.brevo.com',
+                            smtpPort: 587,
+                            smtpSecure: false
+                          });
+                        }}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-1 ${
+                          emailConfig.smtpHost.includes('brevo') || emailConfig.smtpHost.includes('sendinblue')
+                            ? 'bg-blue-900 text-white border-blue-900 shadow-xs'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span className="text-base">🚀</span>
+                        <span>Brevo (Free)</span>
+                        <span className="text-[10px] font-normal opacity-80">No Google Req.</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEmailConfig({
+                            ...emailConfig,
+                            smtpHost: 'smtp.gmail.com',
+                            smtpPort: 587,
+                            smtpSecure: false
+                          });
+                        }}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-1 ${
+                          emailConfig.smtpHost.includes('gmail')
+                            ? 'bg-blue-900 text-white border-blue-900 shadow-xs'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span className="text-base">🔴</span>
+                        <span>Google / Gmail</span>
+                        <span className="text-[10px] font-normal opacity-80">App Password</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEmailConfig({
+                            ...emailConfig,
+                            smtpHost: 'smtp-mail.outlook.com',
+                            smtpPort: 587,
+                            smtpSecure: false
+                          });
+                        }}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-1 ${
+                          emailConfig.smtpHost.includes('outlook') || emailConfig.smtpHost.includes('office365')
+                            ? 'bg-blue-900 text-white border-blue-900 shadow-xs'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span className="text-base">📫</span>
+                        <span>Outlook / O365</span>
+                        <span className="text-[10px] font-normal opacity-80">Microsoft</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEmailConfig({
+                            ...emailConfig,
+                            smtpHost: '',
+                            smtpPort: 587,
+                            smtpSecure: false
+                          });
+                        }}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-1 ${
+                          !emailConfig.smtpHost.includes('brevo') && !emailConfig.smtpHost.includes('gmail') && !emailConfig.smtpHost.includes('outlook') && !emailConfig.smtpHost.includes('office365')
+                            ? 'bg-blue-900 text-white border-blue-900 shadow-xs'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span className="text-base">⚙️</span>
+                        <span>Custom Mail</span>
+                        <span className="text-[10px] font-normal opacity-80">College Server</span>
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Sender Email */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Sender Email Address (e.g. Gmail or College Mail) *
+                      {emailConfig.smtpHost.includes('brevo') ? 'Brevo Account Email Address *' : 'Sender Email Address *'}
                     </label>
                     <div className="relative">
                       <AtSign className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <input
                         type="email"
                         required
-                        placeholder="excellencia.portal@gmail.com"
+                        placeholder={emailConfig.smtpHost.includes('brevo') ? 'your.email@gmail.com (Brevo login email)' : 'excellencia.portal@gmail.com'}
                         value={emailConfig.smtpUser}
                         onChange={(e) => setEmailConfig({ ...emailConfig, smtpUser: e.target.value })}
                         className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-700"
                       />
                     </div>
                     <p className="text-[11px] text-slate-400 mt-1">
-                      The official sender mailbox used to dispatch notification emails.
+                      {emailConfig.smtpHost.includes('brevo') 
+                        ? 'The email you registered with on Brevo.com'
+                        : 'The official sender mailbox used to dispatch notification emails.'}
                     </p>
                   </div>
 
-                  {/* Google App Password */}
+                  {/* Password / API Key */}
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="block text-xs font-bold text-slate-700">
-                        Google 16-Character App Password *
+                        {emailConfig.smtpHost.includes('brevo') 
+                          ? 'Brevo Master SMTP Key *' 
+                          : emailConfig.smtpHost.includes('gmail') 
+                            ? 'Google 16-Character App Password *' 
+                            : 'SMTP Password / Master Key *'}
                       </label>
                       <button
                         type="button"
@@ -2229,7 +2327,7 @@ export default function FacultyPortal({
                         className="text-[11px] font-bold text-blue-700 hover:text-blue-900 flex items-center gap-1"
                       >
                         <HelpCircle className="w-3.5 h-3.5" />
-                        <span>{showGoogleGuide ? 'Hide Instructions' : 'How to get Google App Password?'}</span>
+                        <span>{showGoogleGuide ? 'Hide Instructions' : 'How to get this key?'}</span>
                       </button>
                     </div>
 
@@ -2237,7 +2335,15 @@ export default function FacultyPortal({
                       <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <input
                         type={showAppPassword ? 'text' : 'password'}
-                        placeholder={emailConfig.hasPassword ? '•••••••••••••••• (Password Saved - leave blank to keep)' : '16-character Google App Password (e.g. abcd efgh ijkl mnop)'}
+                        placeholder={
+                          emailConfig.hasPassword 
+                            ? '•••••••••••••••• (Key Saved - leave blank to keep)' 
+                            : emailConfig.smtpHost.includes('brevo')
+                              ? 'Paste your Brevo SMTP Master Key (e.g. xsmtpsib-...)'
+                              : emailConfig.smtpHost.includes('gmail')
+                                ? '16-character Google App Password (e.g. abcd efgh ijkl mnop)'
+                                : 'Enter your email SMTP password'
+                        }
                         value={emailConfig.smtpPass}
                         onChange={(e) => setEmailConfig({ ...emailConfig, smtpPass: e.target.value })}
                         className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-700"
@@ -2252,36 +2358,120 @@ export default function FacultyPortal({
                     </div>
                   </div>
 
-                  {/* Google Setup Guide Accordion */}
+                  {/* Provider Setup Guide Accordion */}
                   {showGoogleGuide && (
-                    <div className="p-4 bg-blue-50/70 border border-blue-200 rounded-2xl space-y-2 text-xs text-blue-950">
-                      <h4 className="font-bold flex items-center gap-1.5 text-blue-900">
-                        <Sparkles className="w-4 h-4 text-blue-700" />
-                        <span>3-Step Quick Setup for Gmail App Password:</span>
-                      </h4>
-                      <ol className="list-decimal list-inside space-y-1.5 text-slate-700 text-[11px] pl-1">
-                        <li>
-                          Ensure <strong>2-Step Verification</strong> is ON for your Google Account.
-                        </li>
-                        <li>
-                          Visit Google's App Passwords page:{' '}
-                          <a
-                            href="https://myaccount.google.com/apppasswords"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-700 font-bold underline inline-flex items-center gap-0.5"
-                          >
-                            <span>myaccount.google.com/apppasswords</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </li>
-                        <li>
-                          Type app name as <code className="bg-blue-100 px-1.5 py-0.5 rounded text-blue-900 font-mono">Excellencia Portal</code> and click <strong>Create</strong>.
-                        </li>
-                        <li>
-                          Copy the <strong>16-letter code</strong> and paste it directly into the password box above!
-                        </li>
-                      </ol>
+                    <div className="p-4 bg-blue-50/70 border border-blue-200 rounded-2xl space-y-3 text-xs text-blue-950">
+                      {emailConfig.smtpHost.includes('brevo') ? (
+                        <>
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className="font-bold flex items-center gap-1.5 text-blue-900">
+                              <Sparkles className="w-4 h-4 text-blue-700 flex-shrink-0" />
+                              <span>Recommended Solution: Brevo Free SMTP (No Google Needed)</span>
+                            </h4>
+                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded-full text-[10px]">
+                              100% Free Forever
+                            </span>
+                          </div>
+                          <p className="text-slate-600 text-[11px] leading-relaxed">
+                            If Google App Passwords are disabled on your account, Brevo allows your website to dispatch up to 300 free notifications/day with zero restrictions.
+                          </p>
+                          <ol className="list-decimal list-inside space-y-1.5 text-slate-700 text-[11px] pl-1 font-medium">
+                            <li>
+                              Sign up for a free account at{' '}
+                              <a
+                                href="https://onboarding.brevo.com/account/register"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-700 font-bold underline inline-flex items-center gap-0.5"
+                              >
+                                <span>brevo.com (free registration)</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </li>
+                            <li>
+                              Open your Brevo SMTP & API page:{' '}
+                              <a
+                                href="https://app.brevo.com/settings/keys/smtp"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-700 font-bold underline inline-flex items-center gap-0.5"
+                              >
+                                <span>app.brevo.com/settings/keys/smtp</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </li>
+                            <li>
+                              Click <strong>"Generate a new SMTP key"</strong>, name it <code className="bg-blue-100 px-1.5 py-0.5 rounded text-blue-900 font-mono">Excellencia Portal</code>, and click <strong>Generate</strong>.
+                            </li>
+                            <li>
+                              Copy the generated key (e.g. <code className="bg-blue-100 px-1.5 py-0.5 rounded text-blue-900 font-mono">xsmtpsib-...</code>) and paste it into the <strong>Brevo Master SMTP Key</strong> field above.
+                            </li>
+                            <li>
+                              Enter your Brevo login email in the <strong>Sender Email Address</strong> field above and click <strong>Save Email Settings</strong>!
+                            </li>
+                          </ol>
+                        </>
+                      ) : emailConfig.smtpHost.includes('gmail') ? (
+                        <>
+                          <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-[11px] space-y-1">
+                            <p className="font-bold flex items-center gap-1 text-amber-950">
+                              ⚠️ Is your Google email or App Password disabled?
+                            </p>
+                            <p className="text-slate-700">
+                              Institutional Google Workspace accounts (@excellencia.edu.in) often disable App Passwords. If disabled, click the <strong className="text-blue-900">Brevo (Free)</strong> button above to send emails without Google! Alternatively, use a personal @gmail.com account.
+                            </p>
+                          </div>
+                          <h4 className="font-bold flex items-center gap-1.5 text-blue-900">
+                            <Sparkles className="w-4 h-4 text-blue-700" />
+                            <span>Setup for Personal Gmail Account:</span>
+                          </h4>
+                          <ol className="list-decimal list-inside space-y-1.5 text-slate-700 text-[11px] pl-1 font-medium">
+                            <li>
+                              Ensure <strong>2-Step Verification</strong> is ON for your Google Account.
+                            </li>
+                            <li>
+                              Visit Google's App Passwords page:{' '}
+                              <a
+                                href="https://myaccount.google.com/apppasswords"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-700 font-bold underline inline-flex items-center gap-0.5"
+                              >
+                                <span>myaccount.google.com/apppasswords</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </li>
+                            <li>
+                              Type app name as <code className="bg-blue-100 px-1.5 py-0.5 rounded text-blue-900 font-mono">Excellencia Portal</code> and click <strong>Create</strong>.
+                            </li>
+                            <li>
+                              Copy the <strong>16-letter code</strong> and paste it into the password box above!
+                            </li>
+                          </ol>
+                        </>
+                      ) : emailConfig.smtpHost.includes('outlook') || emailConfig.smtpHost.includes('office365') ? (
+                        <>
+                          <h4 className="font-bold flex items-center gap-1.5 text-blue-900">
+                            <Sparkles className="w-4 h-4 text-blue-700" />
+                            <span>Setup for Microsoft Outlook / Office 365:</span>
+                          </h4>
+                          <ol className="list-decimal list-inside space-y-1.5 text-slate-700 text-[11px] pl-1 font-medium">
+                            <li>Enter your complete Microsoft / Outlook email address (e.g. user@outlook.com or user@hotmail.com).</li>
+                            <li>Enter your account password (or Microsoft App Password if 2FA is active).</li>
+                            <li>SMTP host is set to <code className="bg-blue-100 px-1.5 py-0.5 rounded text-blue-900 font-mono">smtp-mail.outlook.com</code> on port <code className="bg-blue-100 px-1.5 py-0.5 rounded text-blue-900 font-mono">587</code>.</li>
+                          </ol>
+                        </>
+                      ) : (
+                        <>
+                          <h4 className="font-bold flex items-center gap-1.5 text-blue-900">
+                            <Sparkles className="w-4 h-4 text-blue-700" />
+                            <span>Custom SMTP / College Server Setup:</span>
+                          </h4>
+                          <p className="text-slate-700 text-[11px]">
+                            Enter your institution's custom SMTP host (e.g. <code className="bg-blue-100 px-1.5 py-0.5 rounded text-blue-900 font-mono">mail.excellencia.edu.in</code>), port (usually 587 or 465), sender mailbox, and SMTP credentials.
+                          </p>
+                        </>
+                      )}
                     </div>
                   )}
 
