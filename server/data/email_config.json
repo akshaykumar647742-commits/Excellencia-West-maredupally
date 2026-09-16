@@ -1,0 +1,8 @@
+{
+  "smtpHost": "smtp.gmail.com",
+  "smtpPort": 587,
+  "smtpSecure": false,
+  "smtpUser": "excellencia.westmarredpally@gmail.com",
+  "smtpPass": "",
+  "smtpFrom": "Excellencia Academic Portal"
+}

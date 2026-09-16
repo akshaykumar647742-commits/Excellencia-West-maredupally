@@ -4,7 +4,14 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const XLSX = require('xlsx');
-const { sendDoubtNotificationEmail, readNotificationLogs, isSmtpConfigured } = require('./emailService');
+const { 
+  sendDoubtNotificationEmail, 
+  readNotificationLogs, 
+  isSmtpConfigured,
+  getEmailConfig,
+  saveEmailConfig,
+  sendTestEmail
+} = require('./emailService');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -780,11 +787,70 @@ app.get('/api/notifications/logs', (req, res) => {
 
 app.get('/api/notifications/status', (req, res) => {
   const logs = readNotificationLogs();
+  const config = getEmailConfig();
   res.json({
-    smtpConfigured: isSmtpConfigured(),
+    smtpConfigured: config.isConfigured,
+    smtpHost: config.smtpHost,
+    smtpUser: config.smtpUser,
     totalNotificationsSent: logs.length,
-    recentLogs: logs.slice(0, 10)
+    recentLogs: logs.slice(0, 15)
   });
+});
+
+// Email SMTP Settings Management
+app.get('/api/email/config', (req, res) => {
+  const config = getEmailConfig();
+  res.json({
+    smtpHost: config.smtpHost,
+    smtpPort: config.smtpPort,
+    smtpSecure: config.smtpSecure,
+    smtpUser: config.smtpUser,
+    smtpPassMasked: config.smtpPass ? '••••••••••••••••' : '',
+    hasPassword: Boolean(config.smtpPass),
+    smtpFrom: config.smtpFrom,
+    isConfigured: config.isConfigured
+  });
+});
+
+app.post('/api/email/config', (req, res) => {
+  try {
+    const { smtpHost, smtpPort, smtpSecure, smtpUser, smtpPass, smtpFrom } = req.body;
+    const saved = saveEmailConfig({ smtpHost, smtpPort, smtpSecure, smtpUser, smtpPass, smtpFrom });
+    res.json({
+      success: true,
+      message: 'Email configuration saved successfully!',
+      config: saved
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to save email configuration: ' + err.message });
+  }
+});
+
+// Live Test Email Dispatch
+app.post('/api/email/test', async (req, res) => {
+  try {
+    const { recipientEmail } = req.body;
+    if (!recipientEmail || !recipientEmail.trim()) {
+      return res.status(400).json({ success: false, message: 'Recipient email address is required' });
+    }
+
+    const result = await sendTestEmail({ recipientEmail: recipientEmail.trim() });
+    if (result.success) {
+      return res.json({
+        success: true,
+        message: result.message,
+        messageId: result.messageId
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: result.error || 'Failed to dispatch test email'
+      });
+    }
+  } catch (err) {
+    console.error('Test email route error:', err);
+    res.status(500).json({ success: false, message: 'Server error sending test email: ' + err.message });
+  }
 });
 
 // Faculty submits answer to a doubt

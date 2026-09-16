@@ -26,7 +26,17 @@ import {
   RefreshCw,
   Edit3,
   Check,
-  Mail
+  Mail,
+  Settings,
+  X,
+  Eye,
+  EyeOff,
+  Server,
+  AtSign,
+  Globe,
+  Info,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { api } from '../services/api';
 import { getProtectedFileUrl } from '../utils/authUrl';
@@ -173,9 +183,141 @@ export default function FacultyPortal({
     }
   };
 
+  // Email Notification & SMTP Settings state
+  const [showEmailSettingsModal, setShowEmailSettingsModal] = useState(false);
+  const [emailConfig, setEmailConfig] = useState({
+    smtpHost: 'smtp.gmail.com',
+    smtpPort: 587,
+    smtpSecure: false,
+    smtpUser: '',
+    smtpPass: '',
+    smtpPassMasked: '',
+    hasPassword: false,
+    smtpFrom: 'Excellencia Academic Portal',
+    isConfigured: false
+  });
+  const [loadingEmailConfig, setLoadingEmailConfig] = useState(false);
+  const [savingEmailConfig, setSavingEmailConfig] = useState(false);
+  const [emailSaveSuccess, setEmailSaveSuccess] = useState('');
+  const [emailSaveError, setEmailSaveError] = useState('');
+  
+  // Test email state
+  const [testRecipient, setTestRecipient] = useState('');
+  const [sendingTestEmail, setSendingTestEmail] = useState(false);
+  const [testEmailResult, setTestEmailResult] = useState(null);
+  
+  // Email logs state
+  const [emailLogs, setEmailLogs] = useState([]);
+  const [loadingEmailLogs, setLoadingEmailLogs] = useState(false);
+  const [showAppPassword, setShowAppPassword] = useState(false);
+  const [emailSettingsTab, setEmailSettingsTab] = useState('settings'); // 'settings' | 'test' | 'logs'
+  const [showGoogleGuide, setShowGoogleGuide] = useState(false);
+
+  const loadEmailConfig = async () => {
+    try {
+      setLoadingEmailConfig(true);
+      const data = await api.getEmailConfig();
+      if (data) {
+        setEmailConfig({
+          smtpHost: data.smtpHost || 'smtp.gmail.com',
+          smtpPort: data.smtpPort || 587,
+          smtpSecure: Boolean(data.smtpSecure),
+          smtpUser: data.smtpUser || '',
+          smtpPass: '',
+          smtpPassMasked: data.smtpPassMasked || '',
+          hasPassword: Boolean(data.hasPassword),
+          smtpFrom: data.smtpFrom || 'Excellencia Academic Portal',
+          isConfigured: Boolean(data.isConfigured)
+        });
+        if (!testRecipient && facultyAuth?.email) {
+          setTestRecipient(facultyAuth.email);
+        }
+      }
+    } catch (err) {
+      console.error('Error loading email config:', err);
+    } finally {
+      setLoadingEmailConfig(false);
+    }
+  };
+
+  const loadEmailLogs = async () => {
+    try {
+      setLoadingEmailLogs(true);
+      const logs = await api.getNotificationLogs();
+      setEmailLogs(Array.isArray(logs) ? logs : []);
+    } catch (err) {
+      console.error('Error loading email logs:', err);
+    } finally {
+      setLoadingEmailLogs(false);
+    }
+  };
+
+  const handleSaveEmailConfig = async (e) => {
+    e.preventDefault();
+    try {
+      setSavingEmailConfig(true);
+      setEmailSaveSuccess('');
+      setEmailSaveError('');
+
+      const res = await api.saveEmailConfig(emailConfig);
+      if (res.success) {
+        setEmailSaveSuccess('Email settings saved successfully!');
+        setEmailConfig(prev => ({
+          ...prev,
+          smtpPass: '',
+          smtpPassMasked: '••••••••••••••••',
+          hasPassword: true,
+          isConfigured: res.config?.isConfigured
+        }));
+        setTimeout(() => setEmailSaveSuccess(''), 4000);
+      } else {
+        setEmailSaveError(res.message || 'Failed to save settings');
+      }
+    } catch (err) {
+      setEmailSaveError(err.message || 'Network error saving settings');
+    } finally {
+      setSavingEmailConfig(false);
+    }
+  };
+
+  const handleSendTestEmail = async (e) => {
+    e.preventDefault();
+    if (!testRecipient || !testRecipient.trim()) {
+      setTestEmailResult({ success: false, message: 'Please enter a recipient email address' });
+      return;
+    }
+
+    try {
+      setSendingTestEmail(true);
+      setTestEmailResult(null);
+
+      const res = await api.sendTestEmail(testRecipient.trim());
+      if (res.success) {
+        setTestEmailResult({
+          success: true,
+          message: `✅ Test email successfully dispatched to ${testRecipient}! Check your inbox (or spam folder).`
+        });
+        loadEmailLogs();
+      } else {
+        setTestEmailResult({
+          success: false,
+          message: res.message || 'Failed to dispatch test email.'
+        });
+      }
+    } catch (err) {
+      setTestEmailResult({
+        success: false,
+        message: err.message || 'Error communicating with email server.'
+      });
+    } finally {
+      setSendingTestEmail(false);
+    }
+  };
+
   useEffect(() => {
     if (facultyAuth) {
       loadDoubts();
+      loadEmailConfig();
     }
   }, [facultyAuth, adminViewAllDoubts]);
 
@@ -1542,14 +1684,38 @@ export default function FacultyPortal({
               </p>
             </div>
 
-            <button
-              onClick={() => loadDoubts()}
-              disabled={loadingDoubts}
-              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors self-start md:self-auto"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loadingDoubts ? 'animate-spin' : ''}`} />
-              <span>Refresh Doubts</span>
-            </button>
+            <div className="flex items-center gap-2 self-start md:self-auto flex-wrap">
+              <button
+                onClick={() => {
+                  setShowEmailSettingsModal(true);
+                  loadEmailConfig();
+                  loadEmailLogs();
+                }}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs border ${
+                  emailConfig?.isConfigured
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                    : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100 ring-2 ring-amber-400/30'
+                }`}
+                title="Configure Google App Password or SMTP and test live email delivery"
+              >
+                <Mail className="w-3.5 h-3.5 text-blue-700" />
+                <span>{emailConfig?.isConfigured ? '📧 Email Alerts: Active' : '⚙️ Configure Real Email Alerts'}</span>
+                {emailConfig?.isConfigured ? (
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                ) : (
+                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                )}
+              </button>
+
+              <button
+                onClick={() => loadDoubts()}
+                disabled={loadingDoubts}
+                className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingDoubts ? 'animate-spin' : ''}`} />
+                <span>Refresh Doubts</span>
+              </button>
+            </div>
           </div>
 
           {/* Privacy Scoping & Oversight Banner */}
@@ -1905,6 +2071,455 @@ export default function FacultyPortal({
                 })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* EMAIL NOTIFICATION SETTINGS & LIVE TEST MODAL */}
+      {showEmailSettingsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-2xl w-full overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="p-6 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-600/30 border border-blue-400/40 flex items-center justify-center text-blue-300">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Email Notification Dispatcher</h3>
+                  <p className="text-xs text-blue-200">
+                    Connect outgoing mail server to deliver student doubts straight to faculty inboxes
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowEmailSettingsModal(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Connection Status Banner */}
+            <div className="p-4 bg-slate-50 border-b border-slate-200">
+              {emailConfig.isConfigured ? (
+                <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-900">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold flex-shrink-0">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <strong className="text-emerald-950 font-bold">Live Outgoing Mail Server Connected</strong>
+                      <span className="px-2 py-0.2 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-black uppercase">Active</span>
+                    </div>
+                    <p className="text-emerald-700 text-[11px] mt-0.5">
+                      Sender Account: <strong className="font-mono">{emailConfig.smtpUser}</strong> (via {emailConfig.smtpHost})
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold flex-shrink-0">
+                    <AlertCircle className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <strong className="text-amber-950 font-bold">Outgoing SMTP Not Configured Yet</strong>
+                      <span className="px-2 py-0.2 rounded-full bg-amber-200 text-amber-900 text-[10px] font-black uppercase">System Logging Mode</span>
+                    </div>
+                    <p className="text-amber-700 text-[11px] mt-0.5">
+                      Student doubts are logged in the portal. Enter your Gmail and a 16-character Google App Password below to deliver real emails to faculty inboxes.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Tabs */}
+            <div className="flex border-b border-slate-200 px-6 pt-3 gap-2 bg-slate-50/50 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setEmailSettingsTab('settings')}
+                className={`pb-3 px-3 border-b-2 flex items-center gap-1.5 transition-all ${
+                  emailSettingsTab === 'settings'
+                    ? 'border-blue-900 text-blue-900'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Settings className="w-3.5 h-3.5" />
+                <span>SMTP Configuration</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setEmailSettingsTab('test')}
+                className={`pb-3 px-3 border-b-2 flex items-center gap-1.5 transition-all ${
+                  emailSettingsTab === 'test'
+                    ? 'border-blue-900 text-blue-900'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Send Live Test Email</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmailSettingsTab('logs');
+                  loadEmailLogs();
+                }}
+                className={`pb-3 px-3 border-b-2 flex items-center gap-1.5 transition-all ${
+                  emailSettingsTab === 'logs'
+                    ? 'border-blue-900 text-blue-900'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>Notification Logs ({emailLogs.length})</span>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 max-h-[60vh] overflow-y-auto space-y-6">
+              {/* TAB 1: SMTP SETTINGS */}
+              {emailSettingsTab === 'settings' && (
+                <form onSubmit={handleSaveEmailConfig} className="space-y-4">
+                  {emailSaveSuccess && (
+                    <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-bold flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                      <span>{emailSaveSuccess}</span>
+                    </div>
+                  )}
+
+                  {emailSaveError && (
+                    <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-bold flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                      <span>{emailSaveError}</span>
+                    </div>
+                  )}
+
+                  {/* Sender Email */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Sender Email Address (e.g. Gmail or College Mail) *
+                    </label>
+                    <div className="relative">
+                      <AtSign className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="email"
+                        required
+                        placeholder="excellencia.portal@gmail.com"
+                        value={emailConfig.smtpUser}
+                        onChange={(e) => setEmailConfig({ ...emailConfig, smtpUser: e.target.value })}
+                        className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-700"
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      The official sender mailbox used to dispatch notification emails.
+                    </p>
+                  </div>
+
+                  {/* Google App Password */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-slate-700">
+                        Google 16-Character App Password *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowGoogleGuide(!showGoogleGuide)}
+                        className="text-[11px] font-bold text-blue-700 hover:text-blue-900 flex items-center gap-1"
+                      >
+                        <HelpCircle className="w-3.5 h-3.5" />
+                        <span>{showGoogleGuide ? 'Hide Instructions' : 'How to get Google App Password?'}</span>
+                      </button>
+                    </div>
+
+                    <div className="relative">
+                      <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type={showAppPassword ? 'text' : 'password'}
+                        placeholder={emailConfig.hasPassword ? '•••••••••••••••• (Password Saved - leave blank to keep)' : '16-character Google App Password (e.g. abcd efgh ijkl mnop)'}
+                        value={emailConfig.smtpPass}
+                        onChange={(e) => setEmailConfig({ ...emailConfig, smtpPass: e.target.value })}
+                        className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-700"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowAppPassword(!showAppPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        {showAppPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Google Setup Guide Accordion */}
+                  {showGoogleGuide && (
+                    <div className="p-4 bg-blue-50/70 border border-blue-200 rounded-2xl space-y-2 text-xs text-blue-950">
+                      <h4 className="font-bold flex items-center gap-1.5 text-blue-900">
+                        <Sparkles className="w-4 h-4 text-blue-700" />
+                        <span>3-Step Quick Setup for Gmail App Password:</span>
+                      </h4>
+                      <ol className="list-decimal list-inside space-y-1.5 text-slate-700 text-[11px] pl-1">
+                        <li>
+                          Ensure <strong>2-Step Verification</strong> is ON for your Google Account.
+                        </li>
+                        <li>
+                          Visit Google's App Passwords page:{' '}
+                          <a
+                            href="https://myaccount.google.com/apppasswords"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-700 font-bold underline inline-flex items-center gap-0.5"
+                          >
+                            <span>myaccount.google.com/apppasswords</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </li>
+                        <li>
+                          Type app name as <code className="bg-blue-100 px-1.5 py-0.5 rounded text-blue-900 font-mono">Excellencia Portal</code> and click <strong>Create</strong>.
+                        </li>
+                        <li>
+                          Copy the <strong>16-letter code</strong> and paste it directly into the password box above!
+                        </li>
+                      </ol>
+                    </div>
+                  )}
+
+                  {/* Sender Display Name */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Sender Display Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Excellencia Academic Portal"
+                      value={emailConfig.smtpFrom}
+                      onChange={(e) => setEmailConfig({ ...emailConfig, smtpFrom: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-700"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      The name that appears in faculty inbox (e.g. "Excellencia Junior College").
+                    </p>
+                  </div>
+
+                  {/* Advanced SMTP Host & Port */}
+                  <div className="pt-2 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1">
+                        SMTP Host (Default: Gmail)
+                      </label>
+                      <input
+                        type="text"
+                        value={emailConfig.smtpHost}
+                        onChange={(e) => setEmailConfig({ ...emailConfig, smtpHost: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1">
+                        SMTP Port
+                      </label>
+                      <input
+                        type="number"
+                        value={emailConfig.smtpPort}
+                        onChange={(e) => setEmailConfig({ ...emailConfig, smtpPort: parseInt(e.target.value, 10) || 587 })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-700"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="pt-4 flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowEmailSettingsModal(false)}
+                      className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={savingEmailConfig}
+                      className="px-6 py-2.5 bg-blue-900 hover:bg-blue-800 active:scale-98 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-2 transition-all disabled:opacity-50"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>{savingEmailConfig ? 'Saving Settings...' : 'Save Email Settings'}</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* TAB 2: SEND LIVE TEST EMAIL */}
+              {emailSettingsTab === 'test' && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-blue-50/70 border border-blue-200 rounded-2xl text-xs text-blue-950 space-y-1">
+                    <h4 className="font-bold flex items-center gap-1.5 text-blue-900">
+                      <Send className="w-4 h-4 text-blue-700" />
+                      <span>Verify Live Email Dispatch</span>
+                    </h4>
+                    <p className="text-slate-600 text-[11px] leading-relaxed">
+                      Enter your own email address to send a live test message and verify that the server connects to your mailbox.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleSendTestEmail} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Recipient Test Email Address *
+                      </label>
+                      <div className="relative">
+                        <AtSign className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="email"
+                          required
+                          placeholder="your.personal.email@gmail.com"
+                          value={testRecipient}
+                          onChange={(e) => setTestRecipient(e.target.value)}
+                          className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-700"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={sendingTestEmail || !testRecipient}
+                      className="w-full py-3 bg-blue-900 hover:bg-blue-800 active:scale-98 text-white rounded-xl text-xs font-bold shadow-md flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                    >
+                      {sendingTestEmail ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Dispatching Test Email to Mail Server...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          <span>Send Live Test Email Now</span>
+                        </>
+                      )}
+                    </button>
+                  </form>
+
+                  {/* Test Result Output */}
+                  {testEmailResult && (
+                    <div className={`p-4 rounded-2xl border text-xs leading-relaxed ${
+                      testEmailResult.success
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                        : 'bg-rose-50 border-rose-300 text-rose-900'
+                    }`}>
+                      <div className="flex items-start gap-2.5">
+                        {testEmailResult.success ? (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                        ) : (
+                          <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+                        )}
+                        <div>
+                          <h5 className="font-bold text-sm">
+                            {testEmailResult.success ? 'Delivery Confirmed!' : 'Email Dispatch Failed'}
+                          </h5>
+                          <p className="mt-1">{testEmailResult.message}</p>
+                          {!testEmailResult.success && (
+                            <div className="mt-2 pt-2 border-t border-rose-200 text-[11px] text-rose-800 space-y-1">
+                              <p><strong>Troubleshooting Tips:</strong></p>
+                              <p>1. Make sure you are using a 16-character Google App Password (not your normal Gmail login password).</p>
+                              <p>2. Verify that 2-Step Verification is active on your Google account.</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 3: NOTIFICATION LOGS */}
+              {emailSettingsTab === 'logs' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-700">Recent Email Notifications Activity</span>
+                    <button
+                      type="button"
+                      onClick={loadEmailLogs}
+                      disabled={loadingEmailLogs}
+                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${loadingEmailLogs ? 'animate-spin' : ''}`} />
+                      <span>Refresh</span>
+                    </button>
+                  </div>
+
+                  {loadingEmailLogs ? (
+                    <div className="p-8 text-center text-slate-400">
+                      <RefreshCw className="w-6 h-6 mx-auto animate-spin mb-2 text-blue-600" />
+                      <p className="text-xs">Loading email records...</p>
+                    </div>
+                  ) : emailLogs.length === 0 ? (
+                    <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-2xl border border-slate-200">
+                      <Mail className="w-6 h-6 mx-auto mb-1 text-slate-300" />
+                      <p className="text-xs font-bold text-slate-600">No Email Notifications Dispatched Yet</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">When students submit questions, every email dispatch will appear here.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5 max-h-[45vh] overflow-y-auto pr-1">
+                      {emailLogs.map((log) => (
+                        <div key={log.id} className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-bold text-slate-900">
+                              {log.recipientName} ({log.recipientEmail})
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                              log.status === 'sent' ? 'bg-emerald-100 text-emerald-800' :
+                              log.status === 'logged_ready_to_send' ? 'bg-amber-100 text-amber-800' :
+                              'bg-rose-100 text-rose-800'
+                            }`}>
+                              {log.status === 'sent' ? 'Delivered' : log.status === 'logged_ready_to_send' ? 'Queued / Logged' : 'Failed'}
+                            </span>
+                          </div>
+
+                          <div className="text-[11px] text-slate-600 flex items-center gap-2 flex-wrap">
+                            <span>Student: <strong>{log.studentName}</strong> ({log.studentId})</span>
+                            <span>•</span>
+                            <span>Subject: <strong>{log.subject}</strong></span>
+                            {log.topic && <span>({log.topic})</span>}
+                          </div>
+
+                          {log.note && (
+                            <p className="text-[10px] text-amber-700 bg-amber-50/80 p-1.5 rounded-lg font-mono">
+                              ℹ️ {log.note}
+                            </p>
+                          )}
+
+                          {log.error && (
+                            <p className="text-[10px] text-rose-700 bg-rose-50/80 p-1.5 rounded-lg font-mono">
+                              ⚠️ {log.error}
+                            </p>
+                          )}
+
+                          <div className="text-[10px] text-slate-400 font-mono pt-1 border-t border-slate-200/60">
+                            {new Date(log.timestamp).toLocaleString()}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-100 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>Encrypted Outgoing SMTP Connection</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowEmailSettingsModal(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -152,5 +152,39 @@ export const api = {
       body: JSON.stringify(doubtData)
     });
     return res.json();
+  },
+
+  // Email Notification & SMTP Settings
+  getEmailConfig: async () => {
+    const res = await fetch(`${API_BASE}/email/config`);
+    return res.json();
+  },
+
+  saveEmailConfig: async (config) => {
+    const res = await fetch(`${API_BASE}/email/config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config)
+    });
+    return res.json();
+  },
+
+  sendTestEmail: async (recipientEmail) => {
+    const res = await fetch(`${API_BASE}/email/test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipientEmail })
+    });
+    return res.json();
+  },
+
+  getNotificationLogs: async () => {
+    const res = await fetch(`${API_BASE}/notifications/logs`);
+    return res.json();
+  },
+
+  getNotificationStatus: async () => {
+    const res = await fetch(`${API_BASE}/notifications/status`);
+    return res.json();
   }
 };
